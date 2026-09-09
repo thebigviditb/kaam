@@ -1,0 +1,7 @@
+{
+  "app": "uv run python app.py",
+  "context": {
+    "github_repo": "thebigviditb/kaam",
+    "@aws-cdk/core:newStyleStackSynthesis": true
+  }
+}

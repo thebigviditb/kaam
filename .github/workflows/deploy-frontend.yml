@@ -1,0 +1,40 @@
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main, staging]
+    paths: ['frontend/**', '.github/workflows/deploy-frontend.yml']
+  workflow_dispatch:
+
+concurrency: frontend-${{ github.ref_name }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    defaults: { run: { working-directory: frontend } }
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      IS_PROD: ${{ github.ref_name == 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+
+      - name: Deploy to Vercel
+        run: |
+          npm i -g vercel@latest
+          if [ "$IS_PROD" = "true" ]; then
+            vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+            vercel build --prod --token="$VERCEL_TOKEN"
+            vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          else
+            vercel pull --yes --environment=preview --git-branch=staging --token="$VERCEL_TOKEN"
+            vercel build --token="$VERCEL_TOKEN"
+            URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+            vercel alias set "$URL" kaam-web-staging.vercel.app --token="$VERCEL_TOKEN"
+          fi

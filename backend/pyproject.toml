@@ -32,6 +32,7 @@ ignore = ["B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/*" = ["E501"]

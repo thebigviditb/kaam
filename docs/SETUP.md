@@ -23,8 +23,10 @@ aws iam create-access-key --user-name kaam-prod-api
 
 ## 2. Neon (Postgres)
 
-Create two projects at https://neon.tech: `kaam-staging` and `kaam-prod`.
-Copy each connection string and change the scheme to `postgresql+psycopg://…`.
+One Neon project with two branches: `production` (prod) and `staging`. Each branch
+has its own connection string; change the scheme to `postgresql+psycopg://…`.
+Use the **pooled** host (`…-pooler…`) in Vercel and the **direct** host in the
+GitHub `DATABASE_URL` secret (migrations).
 
 ## 3. Vercel
 

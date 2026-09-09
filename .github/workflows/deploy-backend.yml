@@ -34,6 +34,8 @@ jobs:
       - name: Deploy to Vercel
         run: |
           npm i -g vercel@latest
+          # The FastAPI builder snapshots the whole directory; drop local-only artifacts first.
+          rm -rf .venv .pytest_cache .ruff_cache
           if [ "$IS_PROD" = "true" ]; then
             vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
             vercel build --prod --token="$VERCEL_TOKEN"

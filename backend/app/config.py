@@ -1,0 +1,31 @@
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    database_url: str = "sqlite:///./kaam.db"
+    cognito_region: str = "us-west-2"
+    cognito_user_pool_id: str = ""
+    cognito_client_id: str = ""
+    media_bucket: str = ""
+    aws_region: str = "us-west-2"
+    cors_origins: str = "http://localhost:8081"
+    auth_dev_bypass: bool = False
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cognito_issuer(self) -> str:
+        return (
+            f"https://cognito-idp.{self.cognito_region}.amazonaws.com/{self.cognito_user_pool_id}"
+        )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

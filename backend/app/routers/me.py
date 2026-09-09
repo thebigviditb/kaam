@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth import Claims, get_claims
+from app.config import Settings, get_settings
 from app.constants import CITIES, PAY_TYPES, TAGS
 from app.db import get_db
 from app.deps import get_current_user
@@ -23,7 +24,10 @@ def get_me(user: User = Depends(get_current_user)):
 
 @router.post("/me", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register_me(
-    body: UserCreate, claims: Claims = Depends(get_claims), db: Session = Depends(get_db)
+    body: UserCreate,
+    claims: Claims = Depends(get_claims),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
     """Create the app-side user record after Cognito sign-up. Idempotent per Cognito sub."""
     existing = db.query(User).filter(User.cognito_sub == claims.sub).one_or_none()
@@ -33,7 +37,7 @@ def register_me(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "workers must provide a phone")
     user = User(
         cognito_sub=claims.sub,
-        email=claims.email,
+        email=claims.resolve_email(settings),
         role=body.role,
         phone=body.phone,
         preferred_language=body.preferred_language,

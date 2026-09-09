@@ -34,12 +34,14 @@ jobs:
       - name: Deploy to Vercel
         run: |
           npm i -g vercel@latest
+          # The FastAPI builder snapshots the whole directory; drop local-only artifacts first.
+          rm -rf .venv .pytest_cache .ruff_cache
           if [ "$IS_PROD" = "true" ]; then
             vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
             vercel build --prod --token="$VERCEL_TOKEN"
             vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
           else
-            vercel pull --yes --environment=preview --git-branch=staging --token="$VERCEL_TOKEN"
+            vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
             vercel build --token="$VERCEL_TOKEN"
             URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
             vercel alias set "$URL" kaam-api-staging.vercel.app --token="$VERCEL_TOKEN"

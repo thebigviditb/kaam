@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     cognito_user_pool_id: str = ""
     cognito_client_id: str = ""
     media_bucket: str = ""
-    aws_region: str = "us-west-2"
+    # Vercel reserves AWS_* names, hence the MEDIA_ prefix.
+    media_aws_region: str = "us-west-2"
+    media_aws_access_key_id: str = ""
+    media_aws_secret_access_key: str = ""
     cors_origins: str = "http://localhost:8081"
     auth_dev_bypass: bool = False
 

@@ -18,9 +18,14 @@ ALLOWED_CONTENT_TYPES = {
 
 @lru_cache
 def _client():
+    st = get_settings()
     return boto3.client(
         "s3",
-        region_name=get_settings().aws_region,
+        region_name=st.media_aws_region,
+        # Force the regional endpoint: the global one 307-redirects presigned requests.
+        endpoint_url=f"https://s3.{st.media_aws_region}.amazonaws.com",
+        aws_access_key_id=st.media_aws_access_key_id or None,
+        aws_secret_access_key=st.media_aws_secret_access_key or None,
         config=Config(signature_version="s3v4"),
     )
 

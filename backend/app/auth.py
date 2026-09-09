@@ -21,6 +21,23 @@ bearer = HTTPBearer(auto_error=False)
 class Claims:
     sub: str
     email: str | None = None
+    access_token: str | None = None
+
+    def resolve_email(self, settings: Settings) -> str | None:
+        """Cognito access tokens carry no email; ask Cognito for it when needed."""
+        if self.email or not self.access_token or not settings.cognito_user_pool_id:
+            return self.email
+        try:
+            import boto3
+
+            resp = boto3.client("cognito-idp", region_name=settings.cognito_region).get_user(
+                AccessToken=self.access_token
+            )
+            attrs = {a["Name"]: a["Value"] for a in resp.get("UserAttributes", [])}
+            self.email = attrs.get("email")
+        except Exception:  # noqa: BLE001 - email is best-effort
+            self.email = None
+        return self.email
 
 
 @lru_cache
@@ -53,7 +70,7 @@ def verify_token(token: str, settings: Settings) -> Claims:
     if settings.cognito_client_id and client != settings.cognito_client_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "token not for this app")
 
-    return Claims(sub=payload["sub"], email=payload.get("email") or payload.get("username"))
+    return Claims(sub=payload["sub"], email=payload.get("email"), access_token=token)
 
 
 def get_claims(

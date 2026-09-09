@@ -18,9 +18,12 @@ ALLOWED_CONTENT_TYPES = {
 
 @lru_cache
 def _client():
+    st = get_settings()
     return boto3.client(
         "s3",
-        region_name=get_settings().aws_region,
+        region_name=st.media_aws_region,
+        aws_access_key_id=st.media_aws_access_key_id or None,
+        aws_secret_access_key=st.media_aws_secret_access_key or None,
         config=Config(signature_version="s3v4"),
     )
 

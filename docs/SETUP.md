@@ -39,9 +39,10 @@ cd ../backend && vercel link # name it kaam-api
 
 `vercel link` writes `.vercel/project.json` containing `orgId` and `projectId`.
 
-Set environment variables on each project. Use the Vercel dashboard
-(Project → Settings → Environment Variables). Set **Production** values and
-**Preview** values scoped to the `staging` branch.
+Set environment variables on each project (dashboard: Project → Settings →
+Environment Variables, or `vercel env add NAME production|preview`). **Production**
+is prod; **Preview** is staging — GitHub Actions is the only deployer, so every
+preview deploy is a staging deploy.
 
 **kaam-api**
 
@@ -52,15 +53,15 @@ Set environment variables on each project. Use the Vercel dashboard
 | COGNITO_USER_POOL_ID | from cdk outputs |
 | COGNITO_CLIENT_ID | from cdk outputs |
 | MEDIA_BUCKET | from cdk outputs |
-| AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY | from `create-access-key` |
-| AWS_REGION | us-west-2 |
-| CORS_ORIGINS | `https://kaam-web.vercel.app` (prod) / `https://kaam-web-staging.vercel.app` (staging) |
+| MEDIA_AWS_ACCESS_KEY_ID / MEDIA_AWS_SECRET_ACCESS_KEY | from `create-access-key` (Vercel reserves the plain AWS_* names) |
+| MEDIA_AWS_REGION | us-west-2 |
+| CORS_ORIGINS | `https://kaam-web-tau.vercel.app` (prod) / `https://kaam-web-staging.vercel.app` (staging) |
 
 **kaam-web**
 
 | Variable | Value |
 |---|---|
-| EXPO_PUBLIC_API_URL | `https://kaam-api.vercel.app` (prod) / `https://kaam-api-staging.vercel.app` (staging) |
+| EXPO_PUBLIC_API_URL | `https://kaam-api-neon.vercel.app` (prod) / `https://kaam-api-staging.vercel.app` (staging) |
 | EXPO_PUBLIC_COGNITO_USER_POOL_ID | from cdk outputs |
 | EXPO_PUBLIC_COGNITO_CLIENT_ID | from cdk outputs |
 
@@ -92,8 +93,8 @@ gh secret set VERCEL_TOKEN --env production --body "…"
 
 ```sh
 git push origin staging        # deploys staging
-# review at https://kaam-web-staging.vercel.app, then
-git checkout main && git merge staging && git push   # deploys production
+# review at https://kaam-web-staging.vercel.app, then merge a PR into main (direct pushes are blocked):
+gh pr create --base main --head staging && gh pr merge --merge   # deploys production
 ```
 
 ## Local development

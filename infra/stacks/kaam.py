@@ -71,6 +71,13 @@ class KaamStack(cdk.Stack):
                 phone_number=cognito.StandardAttribute(required=False, mutable=True),
             ),
             sms_role_external_id=f"kaam-{env_name}-sms",
+            # One-time-code emails require SES (Cognito's default mailer silently drops
+            # them). The FROM identity must be verified in SES us-west-2 before deploying.
+            email=cognito.UserPoolEmail.with_ses(
+                from_email="vidit.batta@gmail.com",
+                from_name="Kaam",
+                ses_region="us-west-2",
+            ),
             lambda_triggers=cognito.UserPoolTriggers(
                 pre_sign_up=pre_sign_up,
                 define_auth_challenge=define_auth,

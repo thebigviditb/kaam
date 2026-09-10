@@ -56,6 +56,13 @@ wait for a cold start or touch the function configuration to restart them.
 While the Twilio account is on trial, Verify only delivers to numbers verified in the Twilio
 console (Phone Numbers → Verified Caller IDs). Upgrading the account removes that limit.
 
+### Email codes (SES)
+
+Cognito only sends login-code emails through Amazon SES, so the pools send from a verified
+SES identity (`vidit.batta@gmail.com`, us-west-2). While the SES account is in the sandbox,
+recipients must also be verified identities; production access was requested on 2026-09-10
+(`aws sesv2 get-account --region us-west-2` shows the review status).
+
 ## 2. Neon (Postgres)
 
 One Neon project with two branches: `production` (prod) and `staging`. Each branch

@@ -1,0 +1,11 @@
+{
+  "name": "kaam-custom-sms-sender",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-crypto/client-node": "^4.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

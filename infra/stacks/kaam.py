@@ -1,10 +1,18 @@
 """Per-environment resources: Cognito user pool, private S3 media bucket, API IAM user."""
 
+from pathlib import Path
+
 import aws_cdk as cdk
 from aws_cdk import aws_cognito as cognito
 from aws_cdk import aws_iam as iam
+from aws_cdk import aws_kms as kms
+from aws_cdk import aws_lambda as lambda_
+from aws_cdk import aws_lambda_nodejs as nodejs
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_secretsmanager as sm
 from constructs import Construct
+
+LAMBDA_DIR = Path(__file__).resolve().parent.parent / "lambda" / "custom-sms-sender"
 
 
 class KaamStack(cdk.Stack):
@@ -13,6 +21,48 @@ class KaamStack(cdk.Stack):
         is_prod = env_name == "prod"
 
         # ---- Cognito ----
+        # ---- SMS via Twilio ----
+        # Cognito encrypts each one-time code with this key and hands it to our Lambda,
+        # which decrypts it and sends the text through Twilio. Credentials live in
+        # Secrets Manager; set them with `aws secretsmanager put-secret-value`.
+        sms_key = kms.Key(
+            self,
+            "SmsSenderKey",
+            description=f"kaam-{env_name} Cognito custom SMS sender",
+            removal_policy=cdk.RemovalPolicy.RETAIN if is_prod else cdk.RemovalPolicy.DESTROY,
+        )
+        twilio_secret = sm.Secret(
+            self,
+            "TwilioSecret",
+            secret_name=f"kaam/{env_name}/twilio",
+            description="Twilio credentials: accountSid, authToken, fromNumber|messagingServiceSid",
+            secret_object_value={
+                "accountSid": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
+                "authToken": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
+                "fromNumber": cdk.SecretValue.unsafe_plain_text("+10000000000"),
+            },
+        )
+        sms_sender = nodejs.NodejsFunction(
+            self,
+            "SmsSender",
+            entry=str(LAMBDA_DIR / "index.mjs"),
+            handler="handler",
+            runtime=lambda_.Runtime.NODEJS_20_X,
+            project_root=str(LAMBDA_DIR),
+            deps_lock_file_path=str(LAMBDA_DIR / "package-lock.json"),
+            bundling=nodejs.BundlingOptions(
+                format=nodejs.OutputFormat.ESM,
+                external_modules=["@aws-sdk/*"],
+            ),
+            timeout=cdk.Duration.seconds(15),
+            environment={
+                "KMS_KEY_ARN": sms_key.key_arn,
+                "TWILIO_SECRET_ARN": twilio_secret.secret_arn,
+            },
+        )
+        sms_key.grant_decrypt(sms_sender)
+        twilio_secret.grant_read(sms_sender)
+
         # Passwordless: workers sign in with a phone number + SMS code, households with
         # phone or email + code. ESSENTIALS is the feature plan that enables OTP factors.
         # "UserPoolV2": sign-in attributes can't change in place, so the passwordless
@@ -35,6 +85,8 @@ class KaamStack(cdk.Stack):
                 phone_number=cognito.StandardAttribute(required=False, mutable=True),
             ),
             sms_role_external_id=f"kaam-{env_name}-sms",
+            custom_sender_kms_key=sms_key,
+            lambda_triggers=cognito.UserPoolTriggers(custom_sms_sender=sms_sender),
             password_policy=cognito.PasswordPolicy(
                 min_length=8,
                 require_lowercase=False,
@@ -89,3 +141,4 @@ class KaamStack(cdk.Stack):
         cdk.CfnOutput(self, "UserPoolClientId", value=client.user_pool_client_id)
         cdk.CfnOutput(self, "MediaBucketName", value=bucket.bucket_name)
         cdk.CfnOutput(self, "ApiUserName", value=api_user.user_name)
+        cdk.CfnOutput(self, "TwilioSecretName", value=twilio_secret.secret_name)

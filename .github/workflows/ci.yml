@@ -60,6 +60,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: uv sync --frozen
+      - run: npm ci && (cd lambda/custom-sms-sender && npm ci)
       - run: uv run ruff check .
       - run: uv run pytest -q
       - run: npx -y aws-cdk@latest synth -q

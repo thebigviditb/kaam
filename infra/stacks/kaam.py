@@ -5,14 +5,12 @@ from pathlib import Path
 import aws_cdk as cdk
 from aws_cdk import aws_cognito as cognito
 from aws_cdk import aws_iam as iam
-from aws_cdk import aws_kms as kms
 from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_lambda_nodejs as nodejs
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_secretsmanager as sm
 from constructs import Construct
 
-LAMBDA_DIR = Path(__file__).resolve().parent.parent / "lambda" / "custom-sms-sender"
+AUTH_LAMBDA_DIR = Path(__file__).resolve().parent.parent / "lambda" / "auth-challenge"
 
 
 class KaamStack(cdk.Stack):
@@ -21,47 +19,39 @@ class KaamStack(cdk.Stack):
         is_prod = env_name == "prod"
 
         # ---- Cognito ----
-        # ---- SMS via Twilio ----
-        # Cognito encrypts each one-time code with this key and hands it to our Lambda,
-        # which decrypts it and sends the text through Twilio. Credentials live in
-        # Secrets Manager; set them with `aws secretsmanager put-secret-value`.
-        sms_key = kms.Key(
-            self,
-            "SmsSenderKey",
-            description=f"kaam-{env_name} Cognito custom SMS sender",
-            removal_policy=cdk.RemovalPolicy.RETAIN if is_prod else cdk.RemovalPolicy.DESTROY,
-        )
+        # ---- Phone login via Twilio Verify ----
+        # US carriers block SMS from unregistered numbers, so instead of Cognito's own SMS
+        # we run a CUSTOM_AUTH challenge: Twilio Verify sends and checks the code.
         twilio_secret = sm.Secret(
             self,
             "TwilioSecret",
             secret_name=f"kaam/{env_name}/twilio",
-            description="Twilio credentials: accountSid, authToken, fromNumber|messagingServiceSid",
+            description="Twilio: accountSid, authToken, verifyServiceSid, fromNumber",
             secret_object_value={
                 "accountSid": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
                 "authToken": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
+                "verifyServiceSid": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
                 "fromNumber": cdk.SecretValue.unsafe_plain_text("+10000000000"),
             },
         )
-        sms_sender = nodejs.NodejsFunction(
-            self,
-            "SmsSender",
-            entry=str(LAMBDA_DIR / "index.mjs"),
-            handler="handler",
-            runtime=lambda_.Runtime.NODEJS_20_X,
-            project_root=str(LAMBDA_DIR),
-            deps_lock_file_path=str(LAMBDA_DIR / "package-lock.json"),
-            bundling=nodejs.BundlingOptions(
-                format=nodejs.OutputFormat.CJS,
-                external_modules=["@aws-sdk/*"],
-            ),
-            timeout=cdk.Duration.seconds(15),
-            environment={
-                "KMS_KEY_ARN": sms_key.key_arn,
-                "TWILIO_SECRET_ARN": twilio_secret.secret_arn,
-            },
-        )
-        sms_key.grant_decrypt(sms_sender)
-        twilio_secret.grant_read(sms_sender)
+
+        def trigger(name: str) -> lambda_.Function:
+            fn = lambda_.Function(
+                self,
+                name,
+                runtime=lambda_.Runtime.NODEJS_20_X,
+                handler=f"{name[0].lower()}{name[1:]}.handler",
+                code=lambda_.Code.from_asset(str(AUTH_LAMBDA_DIR)),
+                timeout=cdk.Duration.seconds(15),
+                environment={"TWILIO_SECRET_ARN": twilio_secret.secret_arn},
+            )
+            twilio_secret.grant_read(fn)
+            return fn
+
+        pre_sign_up = trigger("PreSignUp")
+        define_auth = trigger("DefineAuthChallenge")
+        create_auth = trigger("CreateAuthChallenge")
+        verify_auth = trigger("VerifyAuthChallengeResponse")
 
         # Passwordless: workers sign in with a phone number + SMS code, households with
         # phone or email + code. ESSENTIALS is the feature plan that enables OTP factors.
@@ -85,8 +75,12 @@ class KaamStack(cdk.Stack):
                 phone_number=cognito.StandardAttribute(required=False, mutable=True),
             ),
             sms_role_external_id=f"kaam-{env_name}-sms",
-            custom_sender_kms_key=sms_key,
-            lambda_triggers=cognito.UserPoolTriggers(custom_sms_sender=sms_sender),
+            lambda_triggers=cognito.UserPoolTriggers(
+                pre_sign_up=pre_sign_up,
+                define_auth_challenge=define_auth,
+                create_auth_challenge=create_auth,
+                verify_auth_challenge_response=verify_auth,
+            ),
             password_policy=cognito.PasswordPolicy(
                 min_length=8,
                 require_lowercase=False,
@@ -106,7 +100,7 @@ class KaamStack(cdk.Stack):
         client = pool.add_client(
             "WebClient",
             user_pool_client_name=f"kaam-{env_name}-web",
-            auth_flows=cognito.AuthFlow(user=True, user_srp=True, user_password=True),
+            auth_flows=cognito.AuthFlow(user=True, user_srp=True, user_password=True, custom=True),
             generate_secret=False,
             access_token_validity=cdk.Duration.hours(1),
             refresh_token_validity=cdk.Duration.days(30),

@@ -29,5 +29,4 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-west-2
       - run: uv sync --frozen
-      - run: npm ci && (cd lambda/custom-sms-sender && npm ci)
       - run: npx -y aws-cdk@latest deploy "$STACK" --require-approval never

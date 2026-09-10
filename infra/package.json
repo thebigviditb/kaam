@@ -1,7 +1,0 @@
-{
-  "name": "kaam-infra",
-  "private": true,
-  "devDependencies": {
-    "esbuild": "^0.24.0"
-  }
-}

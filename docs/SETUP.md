@@ -32,17 +32,13 @@ aws sns create-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --region us-
 aws sns verify-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --one-time-password 123456 --region us-west-2
 ```
 
-For production, two things are needed and both were started on 2026-09-10:
+For production SMS we are using **Twilio** (one account for login codes now, and the
+voice/SMS agent later). Carrier rules are the same everywhere in the US: a toll-free number
+must pass toll-free verification (1–3 weeks) before it can text unverified numbers. The
+opt-in screenshot required for that form is `docs/assets/sms-opt-in.png`.
 
-- **Toll-free number** `+1 855-502-4347` (AWS End User Messaging, `phone-3bd563333df54162aa4f8e2a5e60ee61`,
-  $2/month) with toll-free registration `registration-4666c989e1944a0c895fc54aeadf63d1`
-  (company Kaam, use case one-time passcodes). Carrier review takes roughly 1–2 weeks. Check:
-  `aws pinpoint-sms-voice-v2 describe-registrations --region us-west-2`
-- **SNS sandbox exit**: AWS console → SNS → Text messaging (SMS) → "Exit SMS sandbox" (a
-  support case, usually approved within a day).
-
-Until both are done, workers can't receive login codes; households can log in with email codes.
-The future voice-agent phone line will be a separate (Twilio) number.
+Until verification completes, households can log in with email codes and workers can be
+tested with numbers verified in the Twilio console.
 
 ## 2. Neon (Postgres)
 

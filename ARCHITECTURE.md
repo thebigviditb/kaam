@@ -51,11 +51,11 @@ for audio streaming. Nothing in the web app has to change for that.
   - **Onboarding wizard**, one question per screen:
     - Household: name + city → what work (tags + Other) → when needed (asap / 2 weeks /
       month / flexible) → which days + time of day → expected pay + description
-    - Worker: name + bio → what work → which days + time of day available →
-      experience + rate → optional photos/videos. Workers have no location.
-  - Tabs (both roles): **Matches** (ranked), **Browse** (filters), **Connections**
-    (received / sent / accepted, with phone once accepted), **Profile** (edit the
-    onboarding answers), **Settings**
+    - Worker: name + bio → what work → home city + cities willing to work in →
+      which days + time of day available → experience + rate → optional photos/videos.
+  - Tabs: **Matches** (ranked feed; workers see only this — Tinder-style, preferences live
+    on the Profile), **Browse** (households only), **Connections** (received / sent /
+    chats), **Profile**, **Settings**. Report a user from any chat or profile page.
 
 ## 4. Backend
 
@@ -76,15 +76,17 @@ for audio streaming. Nothing in the web app has to change for that.
 | Table            | Key fields |
 |------------------|-----------|
 | users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language |
-| worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, days[], times[], is_visible |
+| worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city (home), work_cities[], days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
 | connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
 | messages         | id, connection_id, sender_id, body, created_at |
+| reports          | id, reporter_id, reported_user_id, connection_id?, reason, description, status |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
 
 **Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
 within_2_weeks, within_month, flexible. **Match score** = 10 × shared tags + 2 × shared
-days + shared time slots; zero shared tags means no match.
+days + shared time slots; zero shared tags, or a household city the worker doesn't cover
+(`work_cities` + home city), means no match.
 
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
 dishes, ironing, childcare, elder_care, grocery, other.
@@ -101,6 +103,7 @@ GET/PUT /customers/me       GET /customers?tags=&days=&times=&city=&min_pay=&pay
 GET /customers/matching     GET /customers/{id}      ← the voice agent's "what work is there for me?"
 POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
 GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
+POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
 POST /media/presign         POST /media              DELETE /media/{id}
 ```
 

@@ -55,6 +55,8 @@ WORKER_PROFILE = {
     "tags": ["cooking", "cleaning"],
     "years_experience": 10,
     "hourly_rate": 25,
+    "city": "Fremont",
+    "work_cities": ["Fremont", "Newark"],
     "days": ["mon", "tue", "wed", "thu", "fri"],
     "times": ["morning", "afternoon"],
 }

@@ -48,7 +48,7 @@ class User(Base):
 
 
 class WorkerProfile(Base):
-    """What a worker can do and when they are available. Location is not tracked."""
+    """What a worker can do, when they are available, and which cities they will work in."""
 
     __tablename__ = "worker_profiles"
 
@@ -59,6 +59,8 @@ class WorkerProfile(Base):
     other_tag_text: Mapped[str | None] = mapped_column(String(255))
     years_experience: Mapped[int] = mapped_column(Integer, default=0)
     hourly_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    city: Mapped[str] = mapped_column(String(64), default="")
+    work_cities: Mapped[list[str]] = mapped_column(JSON, default=list)
     days: Mapped[list[str]] = mapped_column(JSON, default=list)
     times: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -139,3 +141,18 @@ class Media(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     owner: Mapped[User] = relationship(back_populates="media")
+
+
+class Report(Base):
+    """A user reporting another user (from a chat or a profile page)."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    reporter_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    reported_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    connection_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("connections.id"))
+    reason: Mapped[str] = mapped_column(String(32))
+    description: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

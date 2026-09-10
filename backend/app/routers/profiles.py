@@ -114,6 +114,7 @@ def list_workers(
     tags: list[str] | None = Query(default=None),
     days: list[str] | None = Query(default=None),
     times: list[str] | None = Query(default=None),
+    city: str | None = None,
     max_rate: float | None = None,
     min_experience: int | None = None,
     q: str | None = None,
@@ -135,6 +136,8 @@ def list_workers(
         like = f"%{q}%"
         query = query.filter(WorkerProfile.display_name.ilike(like) | WorkerProfile.bio.ilike(like))
     rows = filter_lists(query.order_by(WorkerProfile.updated_at.desc()).all(), tags, days, times)
+    if city:
+        rows = [r for r in rows if city in (r.work_cities or []) or r.city == city]
     conns = _connections_for(db, user)
     return [worker_out(r, user, conns.get(r.user_id)) for r in rows[offset : offset + limit]]
 

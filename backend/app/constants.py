@@ -46,6 +46,14 @@ TIMES = ["morning", "afternoon", "evening"]
 START_TIMINGS = ["asap", "within_2_weeks", "within_month", "flexible"]
 PAY_TYPES = ["hourly", "daily", "monthly", "one_time"]
 CONNECTION_STATUSES = ["pending", "accepted", "declined"]
+REPORT_REASONS = [
+    "inappropriate_behavior",
+    "harassment",
+    "scam_or_fraud",
+    "no_show",
+    "fake_profile",
+    "other",
+]
 ROLES = ["worker", "customer"]
 LANGUAGES = ["en", "hi"]
 MEDIA_KINDS = ["image", "video"]

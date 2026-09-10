@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants import CITIES, DAYS, TAGS, TIMES
+from app.constants import CITIES, DAYS, REPORT_REASONS, TAGS, TIMES
 
 Role = Literal["worker", "customer"]
 Language = Literal["en", "hi"]
@@ -26,6 +26,7 @@ def _subset(allowed: list[str], what: str):
 _check_tags = _subset(TAGS, "tags")
 _check_days = _subset(DAYS, "days")
 _check_times = _subset(TIMES, "times")
+_check_cities = _subset(CITIES, "cities")
 
 
 def _check_city(city: str) -> str:
@@ -111,6 +112,8 @@ class WorkerProfileIn(BaseModel):
     other_tag_text: str | None = Field(default=None, max_length=255)
     years_experience: int = Field(default=0, ge=0, le=60)
     hourly_rate: float | None = Field(default=None, ge=0)
+    city: str
+    work_cities: list[str] = Field(min_length=1)
     days: list[str] = Field(min_length=1)
     times: list[str] = Field(min_length=1)
     is_visible: bool = True
@@ -118,6 +121,8 @@ class WorkerProfileIn(BaseModel):
     _tags = field_validator("tags")(_check_tags)
     _days = field_validator("days")(_check_days)
     _times = field_validator("times")(_check_times)
+    _city = field_validator("city")(_check_city)
+    _work_cities = field_validator("work_cities")(_check_cities)
 
 
 class WorkerProfileOut(ORM):
@@ -128,6 +133,8 @@ class WorkerProfileOut(ORM):
     other_tag_text: str | None
     years_experience: int
     hourly_rate: float | None
+    city: str
+    work_cities: list[str]
     days: list[str]
     times: list[str]
     is_visible: bool
@@ -220,6 +227,20 @@ class ConnectionOut(BaseModel):
     unread_count: int = 0
 
 
+class ReportIn(BaseModel):
+    reported_user_id: str
+    connection_id: str | None = None
+    reason: Literal[
+        "inappropriate_behavior", "harassment", "scam_or_fraud", "no_show", "fake_profile", "other"
+    ]
+    description: str = Field(default="", max_length=2000)
+
+
+class ReportOut(BaseModel):
+    id: str
+    created_at: datetime
+
+
 class MetaOut(BaseModel):
     tags: list[str]
     cities: list[str]
@@ -227,3 +248,4 @@ class MetaOut(BaseModel):
     days: list[str]
     times: list[str]
     start_timings: list[str]
+    report_reasons: list[str] = REPORT_REASONS

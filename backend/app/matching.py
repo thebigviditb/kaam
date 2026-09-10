@@ -15,6 +15,8 @@ def match_score(worker: WorkerProfile, customer: CustomerProfile) -> int:
     tags = overlap(worker.tags, customer.tags)
     if tags == 0:
         return 0
+    if customer.city not in set(worker.work_cities or []) | {worker.city}:
+        return 0
     return (
         tags * 10 + overlap(worker.days, customer.days) * 2 + overlap(worker.times, customer.times)
     )

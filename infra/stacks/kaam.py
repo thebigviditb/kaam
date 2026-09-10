@@ -71,13 +71,9 @@ class KaamStack(cdk.Stack):
                 phone_number=cognito.StandardAttribute(required=False, mutable=True),
             ),
             sms_role_external_id=f"kaam-{env_name}-sms",
-            # One-time-code emails require SES (Cognito's default mailer silently drops
-            # them). The FROM identity must be verified in SES us-west-2 before deploying.
-            email=cognito.UserPoolEmail.with_ses(
-                from_email="vidit.batta@gmail.com",
-                from_name="Kaam",
-                ses_region="us-west-2",
-            ),
+            # TODO(domain): one-time-code emails require SES with a sender on a domain we
+            # own; Gmail rejects mail "from" a gmail.com address sent via SES. Until the
+            # Kaam domain exists, email login codes do not deliver.
             lambda_triggers=cognito.UserPoolTriggers(
                 pre_sign_up=pre_sign_up,
                 define_auth_challenge=define_auth,

@@ -16,7 +16,8 @@ import { colors, spacing, text } from '@/theme';
 
 /**
  * Passwordless sign-up. Step 1: role. Step 2: phone (workers) or phone/email (households).
- * Cognito sends a confirmation code; the verify screen finishes it.
+ * Email: Cognito sends a sign-up confirmation code. Phone: the user is auto-confirmed and a
+ * log-in code is sent via Twilio Verify. The verify screen finishes either one.
  */
 export default function SignUp() {
   const { t } = useI18n();
@@ -45,8 +46,13 @@ export default function SignUp() {
     try {
       await pendingSignup.set({ role, phone: channel === 'phone' ? contact.value : undefined });
       const result = await signUp(contact);
-      if (result.step === 'confirm') {
-        router.push({ pathname: '/(auth)/verify', params: { username: contact.value, kind: contact.kind } });
+      if (result.step !== 'signedIn') {
+        // 'confirmSignUp' (email): confirm the sign-up code. 'confirmSignIn' (phone): the user is
+        // auto-confirmed and a Twilio log-in code is already on its way; answer that challenge.
+        router.push({
+          pathname: '/(auth)/verify',
+          params: { username: contact.value, kind: contact.kind, mode: result.step },
+        });
       }
       // 'signedIn' → the Gate in the root layout takes over.
     } catch (e) {

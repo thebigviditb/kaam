@@ -24,7 +24,7 @@ function parseContact(raw: string): Contact | null {
   return null;
 }
 
-/** Passwordless log-in: contact → OTP code. */
+/** Passwordless log-in: contact → OTP code (Twilio Verify custom challenge for phones, EMAIL_OTP for emails). */
 function CognitoLogin() {
   const { t } = useI18n();
   const { signIn, confirmSignIn } = useAuth();
@@ -64,7 +64,10 @@ function CognitoLogin() {
   const resend = async () => {
     if (!contact) return;
     setError(null);
+    setInfo(null);
+    setCode('');
     try {
+      // For the phone custom challenge, "resend" means starting the sign-in over.
       await signIn(contact);
       setInfo(t('auth.codeResent'));
     } catch (e) {

@@ -78,6 +78,7 @@ export const hi: Table = {
     'auth.invalidContact': 'फ़ोन नंबर या ईमेल डालें',
     'auth.codeRequired': 'कोड डालें',
     'auth.wrongCode': 'यह कोड सही नहीं है। फिर कोशिश करें।',
+    'auth.tooManyAttempts': 'बहुत बार गलत कोड डाला गया। नया कोड मँगाएँ।',
     'auth.userExists': 'इस नंबर या ईमेल से खाता पहले से है। लॉग इन करें।',
     'auth.userNotFound': 'कोई खाता नहीं मिला। पहले खाता बनाएँ।',
     'auth.unexpectedStep': 'अनपेक्षित साइन-इन चरण: {step}',

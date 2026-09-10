@@ -40,16 +40,21 @@ opt-in screenshot required for that form is `docs/assets/sms-opt-in.png`.
 Until verification completes, households can log in with email codes and workers can be
 tested with numbers verified in the Twilio console.
 
-Cognito hands each code to a Lambda (`infra/lambda/custom-sms-sender`) that sends it via
-Twilio. Put the credentials in Secrets Manager (per environment):
+Phone login uses a Cognito **custom auth challenge** (`infra/lambda/auth-challenge`): Twilio
+Verify sends and checks the code from Twilio's own registered numbers, so it works without
+any carrier registration. Create a Verify service in the Twilio console (or via API) and put
+the credentials in Secrets Manager once per environment:
 
 ```sh
 aws secretsmanager put-secret-value --region us-west-2 --secret-id kaam/staging/twilio \
-  --secret-string '{"accountSid":"AC…","authToken":"…","fromNumber":"+1855…"}'
-# or "messagingServiceSid":"MG…" instead of fromNumber
+  --secret-string '{"accountSid":"AC…","authToken":"…","verifyServiceSid":"VA…","fromNumber":"+1833…"}'
 ```
 
-No redeploy needed; the Lambda reads the secret on its next cold start (or within ~15 min).
+Deploys never touch the secret's value. The Lambdas cache it, so after changing it either
+wait for a cold start or touch the function configuration to restart them.
+
+While the Twilio account is on trial, Verify only delivers to numbers verified in the Twilio
+console (Phone Numbers → Verified Caller IDs). Upgrading the account removes that limit.
 
 ## 2. Neon (Postgres)
 

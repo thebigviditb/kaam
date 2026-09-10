@@ -27,12 +27,8 @@ class KaamStack(cdk.Stack):
             "TwilioSecret",
             secret_name=f"kaam/{env_name}/twilio",
             description="Twilio: accountSid, authToken, verifyServiceSid, fromNumber",
-            secret_object_value={
-                "accountSid": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
-                "authToken": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
-                "verifyServiceSid": cdk.SecretValue.unsafe_plain_text("REPLACE_ME"),
-                "fromNumber": cdk.SecretValue.unsafe_plain_text("+10000000000"),
-            },
+            # Value is NOT managed here (a template change would overwrite it). Set it once
+            # with `aws secretsmanager put-secret-value`; see docs/SETUP.md.
         )
 
         def trigger(name: str) -> lambda_.Function:

@@ -18,6 +18,7 @@ import { isApiError } from '@/api/client';
 import { useMarkRead, useMe, useMessages, useMyConnections, useSendMessage } from '@/api/hooks';
 import type { ChatMessage, Connection, Role } from '@/api/types';
 import { Back } from '@/components/Back';
+import { ReportModal } from '@/components/ReportModal';
 import { ErrorView, InlineMessage, Loading } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { displayPhone } from '@/lib/phone';
@@ -84,6 +85,7 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
 
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -152,7 +154,22 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
               <Ionicons name="call-outline" size={22} color={colors.success} />
             </Pressable>
           ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('chat.report', { name: otherName })}
+            onPress={() => setReporting(true)}
+            style={s.iconBtn}
+            hitSlop={4}>
+            <Ionicons name="flag-outline" size={22} color={colors.muted} />
+          </Pressable>
         </View>
+        <ReportModal
+          visible={reporting}
+          onClose={() => setReporting(false)}
+          reportedUserId={otherId}
+          reportedName={otherName}
+          connectionId={conn.id}
+        />
 
         {!accepted ? (
           <View style={s.center}>
@@ -284,6 +301,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.successSoft,
   },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   list: { flex: 1 },
   listContent: { paddingVertical: spacing.md, flexGrow: 1, justifyContent: 'flex-end' },
   center: { flex: 1, paddingVertical: spacing.xl, alignItems: 'center', justifyContent: 'center' },

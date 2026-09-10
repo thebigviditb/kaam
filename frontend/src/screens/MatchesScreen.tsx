@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useMatchingCustomers, useMatchingWorkers } from '@/api/hooks';
+import { useMatchingCustomers, useMatchingWorkers, useMyWorkerProfile } from '@/api/hooks';
 import { CustomerCard, WorkerCard } from '@/components/cards';
 import { EmptyState, ErrorView, Loading, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -42,13 +42,36 @@ function WelcomeBanner({ message }: { message: string }) {
   );
 }
 
-/** Worker's Matches tab: households ranked by fit. */
+/** "Based on your profile: cooking, cleaning, Fremont, Newark. Edit in Profile." */
+function ProfileBasis() {
+  const { t, label } = useI18n();
+  const router = useRouter();
+  const profile = useMyWorkerProfile();
+  const p = profile.data;
+  if (!p) return null;
+  const tags = p.tags.map((x) => (x === 'other' && p.other_tag_text ? p.other_tag_text : label('tags', x))).join(', ');
+  const cities = (p.work_cities ?? []).join(', ');
+  return (
+    <Text style={[text.muted, s.basis]}>
+      {t('matches.workerBasis', { tags, cities })}{' '}
+      <Text
+        style={s.basisLink}
+        accessibilityRole="link"
+        onPress={() => router.push('/(worker)/profile')}>
+        {t('matches.editProfile')}
+      </Text>
+    </Text>
+  );
+}
+
+/** Worker's Matches tab (their feed): households ranked by fit. */
 export function WorkerMatches() {
   const { t } = useI18n();
   const router = useRouter();
   const q = useMatchingCustomers();
   return (
     <Screen title={t('matches.workerTitle')} subtitle={t('matches.workerHint')}>
+      <ProfileBasis />
       <WelcomeBanner message={t('matches.welcomeWorker')} />
       {q.isPending ? (
         <Loading />
@@ -109,4 +132,6 @@ const s = StyleSheet.create({
     marginBottom: spacing.md,
   },
   dismiss: { color: colors.accent, fontWeight: '600', fontSize: 14 },
+  basis: { marginTop: -spacing.sm, marginBottom: spacing.md },
+  basisLink: { color: colors.accent, fontWeight: '600' },
 });

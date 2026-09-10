@@ -13,6 +13,8 @@ import type {
   Meta,
   PresignRequest,
   PresignResponse,
+  ReportCreate,
+  ReportOut,
   User,
   UserCreate,
   UserUpdate,
@@ -80,6 +82,9 @@ export const api = {
   sendMessage: (connectionId: string, body: ChatMessageCreate) =>
     request<ChatMessage>('POST', `/connections/${connectionId}/messages`, { body }),
   markRead: (connectionId: string) => request<void>('POST', `/connections/${connectionId}/read`),
+
+  // reports
+  createReport: (body: ReportCreate) => request<ReportOut>('POST', '/reports', { body }),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

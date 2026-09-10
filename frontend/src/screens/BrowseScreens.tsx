@@ -2,19 +2,10 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useCustomers, useMeta, useWorkers } from '@/api/hooks';
-import {
-  DAYS,
-  PAY_TYPES,
-  START_TIMINGS,
-  TIMES,
-  type CustomerFilters,
-  type PayType,
-  type StartTiming,
-  type WorkerFilters,
-} from '@/api/types';
-import { CustomerCard, WorkerCard } from '@/components/cards';
-import { ChipGroup, ChipRadio } from '@/components/Chip';
+import { useMeta, useWorkers } from '@/api/hooks';
+import { DAYS, TIMES, type WorkerFilters } from '@/api/types';
+import { WorkerCard } from '@/components/cards';
+import { ChipGroup } from '@/components/Chip';
 import { Select } from '@/components/Select';
 import { Button, EmptyState, ErrorView, Field, Input, Loading, Row, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -34,95 +25,6 @@ function num(s: string): number | undefined {
   return s.trim() && Number.isFinite(n) ? n : undefined;
 }
 
-/** Worker browsing households. */
-export function BrowseCustomers() {
-  const { t, label } = useI18n();
-  const router = useRouter();
-  const meta = useMeta();
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [city, setCity] = useState<string | null>(null);
-  const [days, setDays] = useState<string[]>([]);
-  const [times, setTimes] = useState<string[]>([]);
-  const [minPay, setMinPay] = useState('');
-  const [payType, setPayType] = useState<PayType | null>(null);
-  const [timing, setTiming] = useState<StartTiming | null>(null);
-  const dq = useDebounced(q.trim());
-  const dMin = useDebounced(minPay);
-
-  const filters: CustomerFilters = {
-    q: dq || undefined,
-    tags,
-    city: city ?? undefined,
-    days,
-    times,
-    min_pay: num(dMin),
-    pay_type: payType ?? undefined,
-    start_timing: timing ?? undefined,
-  };
-  const list = useCustomers(filters);
-
-  return (
-    <Screen
-      title={t('browse.workerTitle')}
-      right={
-        <Button
-          title={open ? t('common.hideFilters') : t('common.showFilters')}
-          variant="secondary"
-          small
-          onPress={() => setOpen((o) => !o)}
-        />
-      }>
-      <Input value={q} onChangeText={setQ} placeholder={t('browse.searchCustomers')} style={{ marginBottom: spacing.md }} />
-      {open ? (
-        <View style={{ marginBottom: spacing.md }}>
-          <Field label={t('common.tags')}>
-            <ChipGroup options={meta.data?.tags ?? []} value={tags} onChange={setTags} labelFor={(v) => label('tags', v)} />
-          </Field>
-          <Field label={t('common.city')}>
-            <Select value={city} options={meta.data?.cities ?? []} onChange={setCity} placeholder={t('common.any')} allowClear />
-          </Field>
-          <Field label={t('common.days')}>
-            <ChipGroup options={DAYS} value={days} onChange={setDays} labelFor={(v) => label('days', v)} />
-          </Field>
-          <Field label={t('common.times')}>
-            <ChipGroup options={TIMES} value={times} onChange={setTimes} labelFor={(v) => label('times', v)} />
-          </Field>
-          <Row style={{ alignItems: 'flex-start' }}>
-            <View style={{ flex: 1, minWidth: 140 }}>
-              <Field label={t('browse.minPay')}>
-                <Input value={minPay} onChangeText={setMinPay} keyboardType="decimal-pad" placeholder="20" />
-              </Field>
-            </View>
-          </Row>
-          <Field label={t('browse.payType')}>
-            <ChipRadio options={PAY_TYPES} value={payType} onChange={setPayType} labelFor={(v) => label('payTypes', v)} />
-          </Field>
-          <Field label={t('browse.startTiming')}>
-            <ChipRadio options={START_TIMINGS} value={timing} onChange={setTiming} labelFor={(v) => label('startTimings', v)} />
-          </Field>
-        </View>
-      ) : null}
-      {list.isPending ? (
-        <Loading />
-      ) : list.isError ? (
-        <ErrorView message={list.error.message} onRetry={() => list.refetch()} />
-      ) : list.data.length === 0 ? (
-        <EmptyState message={t('browse.emptyCustomers')} />
-      ) : (
-        list.data.map((c) => (
-          <CustomerCard
-            key={c.user_id}
-            customer={c}
-            onPress={() => router.push({ pathname: '/(worker)/customers/[id]', params: { id: c.user_id } })}
-          />
-        ))
-      )}
-    </Screen>
-  );
-}
-
 /** Household browsing workers. */
 export function BrowseWorkers() {
   const { t, label } = useI18n();
@@ -131,6 +33,7 @@ export function BrowseWorkers() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [city, setCity] = useState<string | null>(null);
   const [days, setDays] = useState<string[]>([]);
   const [times, setTimes] = useState<string[]>([]);
   const [maxRate, setMaxRate] = useState('');
@@ -142,6 +45,7 @@ export function BrowseWorkers() {
   const filters: WorkerFilters = {
     q: dq || undefined,
     tags,
+    city: city ?? undefined,
     days,
     times,
     max_rate: num(dMax),
@@ -165,6 +69,9 @@ export function BrowseWorkers() {
         <View style={{ marginBottom: spacing.md }}>
           <Field label={t('common.tags')}>
             <ChipGroup options={meta.data?.tags ?? []} value={tags} onChange={setTags} labelFor={(v) => label('tags', v)} />
+          </Field>
+          <Field label={t('common.city')}>
+            <Select value={city} options={meta.data?.cities ?? []} onChange={setCity} placeholder={t('common.any')} allowClear />
           </Field>
           <Field label={t('common.days')}>
             <ChipGroup options={DAYS} value={days} onChange={setDays} labelFor={(v) => label('days', v)} />

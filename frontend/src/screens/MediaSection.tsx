@@ -30,8 +30,14 @@ function guessContentType(asset: ImagePicker.ImagePickerAsset, kind: MediaKind):
   return map[ext] ?? (kind === 'image' ? 'image/jpeg' : 'video/mp4');
 }
 
-/** Upload / list / delete the signed-in user's photos and videos. */
-export function MediaSection() {
+function kindOf(asset: ImagePicker.ImagePickerAsset): MediaKind {
+  if (asset.type === 'video') return 'video';
+  if (asset.type === 'image') return 'image';
+  return asset.mimeType?.startsWith('video/') ? 'video' : 'image';
+}
+
+/** Upload / list / delete the signed-in user's photos and videos (workers and households alike). */
+export function MediaSection({ hint }: { hint?: string }) {
   const { t } = useI18n();
   const media = useMyMedia();
   const register = useRegisterMedia();
@@ -42,29 +48,34 @@ export function MediaSection() {
   const count = media.data?.length ?? 0;
   const atLimit = count >= mediaLimits.maxItems;
 
-  const pick = async (kind: MediaKind) => {
+  const upload = async (asset: ImagePicker.ImagePickerAsset) => {
+    const kind = kindOf(asset);
+    const contentType = guessContentType(asset, kind);
+    if (!mediaLimits.allowedContentTypes[kind].includes(contentType)) {
+      throw new Error(`${t('profile.unsupportedType')} (${contentType})`);
+    }
+    const blob = await (await fetch(asset.uri)).blob();
+    const size = asset.fileSize ?? blob.size;
+    const limit = kind === 'image' ? mediaLimits.maxImageBytes : mediaLimits.maxVideoBytes;
+    if (size > limit) throw new Error(t('profile.tooLarge'));
+    const presign = await api.presignMedia({ kind, content_type: contentType, size_bytes: size });
+    await uploadToPresignedUrl(presign, blob);
+    await register.mutateAsync({ kind, s3_key: presign.s3_key, content_type: contentType });
+  };
+
+  const pick = async () => {
     setError(null);
     if (atLimit) return setError(t('profile.mediaLimit'));
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: kind === 'image' ? ['images'] : ['videos'],
-      allowsMultipleSelection: false,
+      mediaTypes: ['images', 'videos'],
+      allowsMultipleSelection: true,
+      selectionLimit: mediaLimits.maxItems - count,
       quality: 0.9,
     });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    const contentType = guessContentType(asset, kind);
-    if (!mediaLimits.allowedContentTypes[kind].includes(contentType)) {
-      return setError(`${t('profile.unsupportedType')} (${contentType})`);
-    }
+    if (result.canceled || result.assets.length === 0) return;
     setUploading(true);
     try {
-      const blob = await (await fetch(asset.uri)).blob();
-      const size = asset.fileSize ?? blob.size;
-      const limit = kind === 'image' ? mediaLimits.maxImageBytes : mediaLimits.maxVideoBytes;
-      if (size > limit) throw new Error(t('profile.tooLarge'));
-      const presign = await api.presignMedia({ kind, content_type: contentType, size_bytes: size });
-      await uploadToPresignedUrl(presign, blob);
-      await register.mutateAsync({ kind, s3_key: presign.s3_key, content_type: contentType });
+      for (const asset of result.assets.slice(0, mediaLimits.maxItems - count)) await upload(asset);
     } catch (e) {
       setError(`${t('profile.uploadFailed')}: ${errorMessage(e)}`);
     } finally {
@@ -83,13 +94,13 @@ export function MediaSection() {
 
   return (
     <View>
+      {hint ? <Text style={[text.muted, { marginBottom: spacing.xs }]}>{hint}</Text> : null}
       <Text style={[text.small, { marginBottom: spacing.sm }]}>
         {t('profile.mediaHint', { n: mediaLimits.maxItems })} ({count}/{mediaLimits.maxItems})
       </Text>
       {error ? <InlineMessage message={error} /> : null}
       <Row style={{ marginBottom: spacing.md }}>
-        <Button title={t('profile.addPhoto')} variant="secondary" small onPress={() => pick('image')} disabled={uploading || atLimit} />
-        <Button title={t('profile.addVideo')} variant="secondary" small onPress={() => pick('video')} disabled={uploading || atLimit} />
+        <Button title={t('profile.addMedia')} variant="secondary" small onPress={pick} disabled={uploading || atLimit} />
         {uploading ? <Text style={text.muted}>{t('profile.uploading')}</Text> : null}
       </Row>
       {media.isPending ? (

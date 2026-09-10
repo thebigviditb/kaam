@@ -46,7 +46,7 @@ export function WorkerProfileScreen() {
   if (profile.isPending || !meta.data || !profile.data) return <Loading />;
   return (
     <Screen title={t('profile.title')} subtitle={t('profile.workerIntro')}>
-      <WorkerForm initial={profile.data} allTags={meta.data.tags} />
+      <WorkerForm initial={profile.data} allTags={meta.data.tags} cities={meta.data.cities} />
       <Section title={t('profile.media')}>
         <MediaSection />
       </Section>
@@ -54,11 +54,13 @@ export function WorkerProfileScreen() {
   );
 }
 
-function WorkerForm({ initial, allTags }: { initial: WorkerProfile; allTags: string[] }) {
+function WorkerForm({ initial, allTags, cities }: { initial: WorkerProfile; allTags: string[]; cities: string[] }) {
   const { t, label } = useI18n();
   const upsert = useUpsertWorkerProfile();
   const [name, setName] = useState(initial.display_name);
   const [bio, setBio] = useState(initial.bio);
+  const [city, setCity] = useState<string | null>(initial.city);
+  const [workCities, setWorkCities] = useState<string[]>(initial.work_cities);
   const [tags, setTags] = useState<string[]>(initial.tags);
   const [otherText, setOtherText] = useState(initial.other_tag_text ?? '');
   const [days, setDays] = useState<string[]>(initial.days);
@@ -71,6 +73,8 @@ function WorkerForm({ initial, allTags }: { initial: WorkerProfile; allTags: str
 
   const submit = async () => {
     if (!name.trim()) return setError(t('onb.nameRequired'));
+    if (!city) return setError(t('onb.cityRequired'));
+    if (workCities.length === 0) return setError(t('onb.workCitiesRequired'));
     if (tags.length === 0) return setError(t('onb.tagsRequired'));
     if (tags.includes('other') && !otherText.trim()) return setError(t('onb.otherRequired'));
     if (days.length === 0) return setError(t('onb.daysRequired'));
@@ -84,6 +88,8 @@ function WorkerForm({ initial, allTags }: { initial: WorkerProfile; allTags: str
       await upsert.mutateAsync({
         display_name: name.trim(),
         bio: bio.trim(),
+        city,
+        work_cities: workCities,
         tags,
         other_tag_text: tags.includes('other') ? otherText.trim() : null,
         years_experience: yrs,
@@ -107,6 +113,20 @@ function WorkerForm({ initial, allTags }: { initial: WorkerProfile; allTags: str
       </Field>
       <Field label={t('onb.w.bio')} optional>
         <Input value={bio} onChangeText={setBio} multiline placeholder={t('onb.w.bioPlaceholder')} />
+      </Field>
+      <Field label={t('onb.w.city')}>
+        <Select
+          value={city}
+          options={cities}
+          onChange={(c) => {
+            setCity(c);
+            if (c && !workCities.includes(c)) setWorkCities((w) => [...w, c]);
+          }}
+          placeholder={t('common.city')}
+        />
+      </Field>
+      <Field label={t('onb.w.workCities')} hint={t('onb.w.workCitiesHint')}>
+        <ChipGroup options={cities} value={workCities} onChange={setWorkCities} labelFor={(v) => v} />
       </Field>
       <TagPicker tags={allTags} value={tags} onChange={setTags} otherText={otherText} onOtherTextChange={setOtherText} />
       <Field label={t('common.days')}>
@@ -143,6 +163,9 @@ export function CustomerProfileScreen() {
   return (
     <Screen title={t('profile.title')} subtitle={t('profile.customerIntro')}>
       <CustomerForm initial={profile.data} allTags={meta.data.tags} cities={meta.data.cities} />
+      <Section title={t('profile.workMedia')}>
+        <MediaSection hint={t('profile.workMediaHint')} />
+      </Section>
     </Screen>
   );
 }

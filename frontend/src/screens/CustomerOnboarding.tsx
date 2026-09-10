@@ -13,10 +13,11 @@ import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
+import { MediaSection } from '@/screens/MediaSection';
 
-const TOTAL = 5;
+const TOTAL = 6;
 
-/** The household's need, one question per screen. Saved with PUT /customers/me at the end. */
+/** The household's need, one question per screen. PUT /customers/me happens at step 5; step 6 is optional media. */
 export function CustomerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
@@ -43,9 +44,9 @@ export function CustomerOnboarding() {
     setError(null);
     setStep((s) => s + 1);
   };
-  const back = step > 1 ? () => setStep((s) => s - 1) : undefined;
+  const back = step > 1 && step < TOTAL ? () => setStep((s) => s - 1) : undefined;
 
-  const finish = async () => {
+  const save = async () => {
     const amount = pay.trim() ? Number(pay) : null;
     if (amount != null && (!Number.isFinite(amount) || amount < 0)) return setError(t('onb.payInvalid'));
     setError(null);
@@ -64,11 +65,15 @@ export function CustomerOnboarding() {
         is_active: true,
       });
       qc.setQueryData<User | null>(keys.me, (u) => (u ? { ...u, onboarded: true } : u));
-      await queueMatchesWelcome();
-      router.replace('/(customer)/matches');
+      next();
     } catch (e) {
       setError(errorMessage(e));
     }
+  };
+
+  const finish = async () => {
+    await queueMatchesWelcome();
+    router.replace('/(customer)/matches');
   };
 
   switch (step) {
@@ -158,7 +163,7 @@ export function CustomerOnboarding() {
           </Field>
         </WizardStep>
       );
-    default:
+    case 5:
       return (
         <WizardStep
           step={5}
@@ -166,8 +171,7 @@ export function CustomerOnboarding() {
           title={t('onb.c.payTitle')}
           error={error}
           onBack={back}
-          onNext={finish}
-          nextLabel={t('onb.c.finish')}
+          onNext={save}
           nextLoading={upsert.isPending}>
           <Field label={t('onb.c.payAmount')} optional>
             <Input value={pay} onChangeText={setPay} keyboardType="decimal-pad" placeholder="25" />
@@ -184,6 +188,19 @@ export function CustomerOnboarding() {
           <Field label={t('onb.c.description')} optional>
             <Input value={description} onChangeText={setDescription} multiline placeholder={t('onb.c.descPlaceholder')} />
           </Field>
+        </WizardStep>
+      );
+    default:
+      return (
+        <WizardStep
+          step={6}
+          total={TOTAL}
+          title={t('onb.c.mediaTitle')}
+          hint={t('onb.c.mediaHint')}
+          onNext={finish}
+          nextLabel={t('onb.c.finish')}
+          secondary={{ label: t('common.skip'), onPress: finish }}>
+          <MediaSection />
         </WizardStep>
       );
   }

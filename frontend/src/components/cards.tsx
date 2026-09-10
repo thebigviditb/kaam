@@ -22,6 +22,14 @@ export function formatSchedule(days: string[], times: string[], label: Labeler):
   return [d, tm].filter(Boolean).join(' · ');
 }
 
+/** "Based in Fremont · Works in Fremont, Newark" */
+export function formatCities(city: string, workCities: string[], t: (k: 'card.basedIn' | 'card.worksIn', p: Record<string, string>) => string): string {
+  const parts: string[] = [];
+  if (city) parts.push(t('card.basedIn', { city }));
+  if (workCities.length) parts.push(t('card.worksIn', { cities: workCities.join(', ') }));
+  return parts.join(' · ');
+}
+
 export function TagRow({ tags, otherText }: { tags: string[]; otherText?: string | null }) {
   const { label } = useI18n();
   return (
@@ -129,6 +137,7 @@ export function WorkerCard({
         <View style={{ flex: 1 }}>
           <Text style={text.h3}>{worker.display_name}</Text>
           <Text style={text.muted}>{t('common.yearsExperience', { n: worker.years_experience })}</Text>
+          <Text style={text.small}>{formatCities(worker.city, worker.work_cities ?? [], t)}</Text>
         </View>
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
           {worker.hourly_rate != null ? (

@@ -10,6 +10,7 @@ import type {
   CustomerFilters,
   CustomerProfileIn,
   MediaRegister,
+  ReportCreate,
   UserCreate,
   UserUpdate,
   WorkerFilters,
@@ -163,6 +164,7 @@ export function useRegisterMedia() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.media });
       qc.invalidateQueries({ queryKey: keys.workerProfile });
+      qc.invalidateQueries({ queryKey: keys.customerProfile });
     },
   });
 }
@@ -174,6 +176,7 @@ export function useDeleteMedia() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.media });
       qc.invalidateQueries({ queryKey: keys.workerProfile });
+      qc.invalidateQueries({ queryKey: keys.customerProfile });
     },
   });
 }
@@ -342,4 +345,10 @@ export function useMarkRead(connectionId: string) {
       inFlight.current = false;
     }
   }, [qc, connectionId]);
+}
+
+// ---- reports ----
+
+export function useCreateReport() {
+  return useMutation({ mutationFn: (body: ReportCreate) => api.createReport(body) });
 }

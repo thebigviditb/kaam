@@ -40,6 +40,17 @@ opt-in screenshot required for that form is `docs/assets/sms-opt-in.png`.
 Until verification completes, households can log in with email codes and workers can be
 tested with numbers verified in the Twilio console.
 
+Cognito hands each code to a Lambda (`infra/lambda/custom-sms-sender`) that sends it via
+Twilio. Put the credentials in Secrets Manager (per environment):
+
+```sh
+aws secretsmanager put-secret-value --region us-west-2 --secret-id kaam/staging/twilio \
+  --secret-string '{"accountSid":"AC…","authToken":"…","fromNumber":"+1855…"}'
+# or "messagingServiceSid":"MG…" instead of fromNumber
+```
+
+No redeploy needed; the Lambda reads the secret on its next cold start (or within ~15 min).
+
 ## 2. Neon (Postgres)
 
 One Neon project with two branches: `production` (prod) and `staging`. Each branch

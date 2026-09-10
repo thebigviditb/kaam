@@ -1,15 +1,25 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Chip } from './Chip';
 import { Badge, Card, Row } from './ui';
-import type { Job, WorkerProfile } from '@/api/types';
+import type { ConnectionSummary, CustomerProfile, WorkerProfile } from '@/api/types';
 import { useI18n } from '@/i18n';
+import { displayPhone } from '@/lib/phone';
 import { colors, spacing, text } from '@/theme';
 
-export function formatPay(amount: number, payType: string, label: (g: 'payTypes', v: string) => string) {
+type Labeler = (g: 'payTypes' | 'days' | 'times' | 'startTimings' | 'tags', v: string) => string;
+
+export function formatPay(amount: number | null, payType: string, label: Labeler): string {
+  if (amount == null) return '';
   const n = Number.isInteger(amount) ? amount.toString() : amount.toFixed(2);
   return `$${n} ${label('payTypes', payType)}`;
+}
+
+export function formatSchedule(days: string[], times: string[], label: Labeler): string {
+  const d = days.map((x) => label('days', x)).join(', ');
+  const tm = times.map((x) => label('times', x)).join(', ');
+  return [d, tm].filter(Boolean).join(' · ');
 }
 
 export function TagRow({ tags, otherText }: { tags: string[]; otherText?: string | null }) {
@@ -23,59 +33,115 @@ export function TagRow({ tags, otherText }: { tags: string[]; otherText?: string
   );
 }
 
-export function JobCard({
-  job,
-  onPress,
-  showApplicants,
+/** Connection state relative to the viewer, as a badge. */
+export function ConnectionBadge({
+  connection,
+  viewerRole,
 }: {
-  job: Job;
+  connection: ConnectionSummary | null;
+  viewerRole: 'worker' | 'customer';
+}) {
+  const { t, label } = useI18n();
+  if (!connection) return null;
+  const mine = connection.initiated_by === viewerRole;
+  const lbl =
+    connection.status === 'pending'
+      ? mine
+        ? t('conn.pendingSent')
+        : t('conn.pendingReceived')
+      : label('connectionStatus', connection.status);
+  return <Badge label={lbl} tone={connection.status} />;
+}
+
+/** Tap-to-call link for a revealed phone number. */
+export function PhoneLink({ phone }: { phone: string }) {
+  const { t } = useI18n();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      onPress={() => Linking.openURL(`tel:${phone}`)}
+      style={s.phone}
+      {...({ href: `tel:${phone}` } as object)}>
+      <Text style={s.phoneText}>{t('common.call', { phone: displayPhone(phone) })}</Text>
+    </Pressable>
+  );
+}
+
+export function MatchScore({ score }: { score: number }) {
+  const { t } = useI18n();
+  if (!score) return null;
+  return <Text style={s.score}>{t('common.match', { n: score })}</Text>;
+}
+
+/** A household's need, as seen by a worker. */
+export function CustomerCard({
+  customer,
+  onPress,
+  showScore,
+}: {
+  customer: CustomerProfile;
   onPress: () => void;
-  showApplicants?: boolean;
+  showScore?: boolean;
 }) {
   const { t, label } = useI18n();
   return (
     <Card onPress={onPress}>
       <View style={s.titleRow}>
-        <Text style={[text.h3, { flex: 1 }]} numberOfLines={2}>
-          {job.title}
-        </Text>
-        {job.my_application_status ? (
-          <Badge label={label('appStatus', job.my_application_status)} tone={job.my_application_status} />
-        ) : job.status !== 'open' || showApplicants ? (
-          <Badge label={label('jobStatus', job.status)} tone={job.status} />
-        ) : null}
+        <View style={{ flex: 1 }}>
+          <Text style={text.h3}>{customer.display_name}</Text>
+          <Text style={text.muted}>{customer.city}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          {showScore ? <MatchScore score={customer.match_score} /> : null}
+          <ConnectionBadge connection={customer.connection} viewerRole="worker" />
+        </View>
       </View>
       <View style={{ marginTop: spacing.sm }}>
-        <TagRow tags={job.tags} otherText={job.other_tag_text} />
+        <TagRow tags={customer.tags} otherText={customer.other_tag_text} />
       </View>
-      <Text style={[s.pay, { marginTop: spacing.sm }]}>{formatPay(job.pay_amount, job.pay_type, label)}</Text>
-      <Text style={text.muted}>
-        {job.city}
-        {job.customer_name ? ` · ${job.customer_name}` : ''}
-        {showApplicants
-          ? ` · ${job.application_count === 1 ? t('jobs.applicant') : t('jobs.applicants', { n: job.application_count })}`
-          : ''}
-      </Text>
+      <View style={{ marginTop: spacing.sm, gap: 2 }}>
+        {customer.pay_amount != null ? (
+          <Text style={s.pay}>{formatPay(customer.pay_amount, customer.pay_type, label)}</Text>
+        ) : null}
+        <Text style={text.muted}>
+          {t('card.start')}: {label('startTimings', customer.start_timing)}
+        </Text>
+        <Text style={text.muted}>{formatSchedule(customer.days, customer.times, label)}</Text>
+      </View>
     </Card>
   );
 }
 
-export function WorkerCard({ worker, onPress }: { worker: WorkerProfile; onPress: () => void }) {
-  const { t } = useI18n();
+/** A worker's profile, as seen by a household. */
+export function WorkerCard({
+  worker,
+  onPress,
+  showScore,
+}: {
+  worker: WorkerProfile;
+  onPress: () => void;
+  showScore?: boolean;
+}) {
+  const { t, label } = useI18n();
   return (
     <Card onPress={onPress}>
       <View style={s.titleRow}>
-        <Text style={[text.h3, { flex: 1 }]}>{worker.display_name}</Text>
-        {worker.hourly_rate != null ? (
-          <Text style={s.pay}>{t('common.perHour', { n: worker.hourly_rate })}</Text>
-        ) : null}
+        <View style={{ flex: 1 }}>
+          <Text style={text.h3}>{worker.display_name}</Text>
+          <Text style={text.muted}>{t('common.yearsExperience', { n: worker.years_experience })}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          {worker.hourly_rate != null ? (
+            <Text style={s.pay}>{t('common.perHour', { n: worker.hourly_rate })}</Text>
+          ) : null}
+          {showScore ? <MatchScore score={worker.match_score} /> : null}
+          <ConnectionBadge connection={worker.connection} viewerRole="customer" />
+        </View>
       </View>
       <View style={{ marginTop: spacing.sm }}>
         <TagRow tags={worker.tags} otherText={worker.other_tag_text} />
       </View>
-      <Text style={[text.muted, { marginTop: spacing.sm }]}>
-        {worker.city} · {t('common.yearsExperience', { n: worker.years_experience })}
-      </Text>
+      <Text style={[text.muted, { marginTop: spacing.sm }]}>{formatSchedule(worker.days, worker.times, label)}</Text>
       {worker.bio ? (
         <Text style={[text.muted, { marginTop: spacing.xs }]} numberOfLines={2}>
           {worker.bio}
@@ -88,4 +154,13 @@ export function WorkerCard({ worker, onPress }: { worker: WorkerProfile; onPress
 const s = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   pay: { fontSize: 15, fontWeight: '600', color: colors.accent },
+  score: { fontSize: 12, fontWeight: '600', color: colors.success },
+  phone: {
+    backgroundColor: colors.success,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  phoneText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

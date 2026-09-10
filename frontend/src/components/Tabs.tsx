@@ -10,7 +10,8 @@ export type TabDef = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
 };
 
-export function AppTabs({ tabs }: { tabs: TabDef[] }) {
+/** `hidden` routes live inside the tab navigator (detail screens) but get no tab button. */
+export function AppTabs({ tabs, hidden = [] }: { tabs: TabDef[]; hidden?: string[] }) {
   return (
     <Tabs
       screenOptions={{
@@ -30,6 +31,9 @@ export function AppTabs({ tabs }: { tabs: TabDef[] }) {
             tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color} />,
           }}
         />
+      ))}
+      {hidden.map((name) => (
+        <Tabs.Screen key={name} name={name} options={{ href: null }} />
       ))}
     </Tabs>
   );

@@ -15,9 +15,11 @@ class KaamStack(cdk.Stack):
         # ---- Cognito ----
         # Passwordless: workers sign in with a phone number + SMS code, households with
         # phone or email + code. ESSENTIALS is the feature plan that enables OTP factors.
+        # "UserPoolV2": sign-in attributes can't change in place, so the passwordless
+        # switch replaced the original pool. Bump this id again if that ever recurs.
         pool = cognito.UserPool(
             self,
-            "UserPool",
+            "UserPoolV2",
             user_pool_name=f"kaam-{env_name}",
             feature_plan=cognito.FeaturePlan.ESSENTIALS,
             self_sign_up_enabled=True,

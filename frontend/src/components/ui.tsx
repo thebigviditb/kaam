@@ -222,12 +222,9 @@ export function Toggle({
 // ---- badges ----
 
 const badgeColors: Record<string, { bg: string; fg: string }> = {
-  open: { bg: colors.successSoft, fg: colors.success },
   accepted: { bg: colors.successSoft, fg: colors.success },
   pending: { bg: colors.warningSoft, fg: colors.warning },
-  filled: { bg: colors.accentSoft, fg: colors.accent },
-  rejected: { bg: colors.dangerSoft, fg: colors.danger },
-  closed: { bg: colors.border, fg: colors.muted },
+  declined: { bg: colors.dangerSoft, fg: colors.danger },
 };
 
 export function Badge({ label, tone }: { label: string; tone?: string }) {

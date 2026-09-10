@@ -124,7 +124,17 @@ async function startEmailChallenge(email: string): Promise<{ signedIn: boolean }
   if (step === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE') return { signedIn: false };
   if (step === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
     // The pool did not honor preferredChallenge; pick the OTP factor explicitly.
-    const next = await amplifyConfirmSignIn({ challengeResponse: 'EMAIL_OTP' });
+    // Cognito offers no code factors when signing in with an alias (e.g. the email
+    // attached to a phone-number account), so tell the user to use their phone instead.
+    const available = (result.nextStep as { availableChallenges?: string[] }).availableChallenges;
+    if (available && !available.includes('EMAIL_OTP')) throw new Error('auth.emailCodeUnavailable');
+    let next;
+    try {
+      next = await amplifyConfirmSignIn({ challengeResponse: 'EMAIL_OTP' });
+    } catch (e) {
+      if (/not available/i.test(String((e as Error)?.message))) throw new Error('auth.emailCodeUnavailable');
+      throw e;
+    }
     if (next.isSignedIn) return { signedIn: true };
     if (next.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE') return { signedIn: false };
     throw new Error(`auth.step:${next.nextStep.signInStep}`);

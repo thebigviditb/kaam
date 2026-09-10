@@ -79,6 +79,7 @@ export const en = {
     'auth.tooManyAttempts': 'Too many wrong attempts. Request a new code.',
     'auth.userExists': 'An account with this number or email already exists. Log in instead.',
     'auth.userNotFound': 'No account found. Sign up first.',
+    'auth.emailCodeUnavailable': 'This account signs in with its phone number. Enter your phone number to get a code.',
     'auth.unexpectedStep': 'Unexpected sign-in step: {step}',
     'auth.haveAccount': 'Already have an account?',
     'auth.noAccount': "Don't have an account?",

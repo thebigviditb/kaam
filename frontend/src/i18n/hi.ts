@@ -81,6 +81,7 @@ export const hi: Table = {
     'auth.tooManyAttempts': 'बहुत बार गलत कोड डाला गया। नया कोड मँगाएँ।',
     'auth.userExists': 'इस नंबर या ईमेल से खाता पहले से है। लॉग इन करें।',
     'auth.userNotFound': 'कोई खाता नहीं मिला। पहले खाता बनाएँ।',
+    'auth.emailCodeUnavailable': 'यह खाता फ़ोन नंबर से साइन इन करता है। कोड पाने के लिए अपना फ़ोन नंबर डालें।',
     'auth.unexpectedStep': 'अनपेक्षित साइन-इन चरण: {step}',
     'auth.haveAccount': 'पहले से खाता है?',
     'auth.noAccount': 'खाता नहीं है?',

@@ -181,6 +181,7 @@ class CustomerProfileOut(ORM):
     times: list[str]
     is_active: bool
     updated_at: datetime
+    media: list[MediaOut] = []
     phone: str | None = None
     connection: ConnectionSummary | None = None
     match_score: int = 0

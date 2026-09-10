@@ -41,9 +41,8 @@ def _reveal_phone(viewer: User, owner: User, c: Connection | None) -> bool:
     return viewer.id == owner.id or (c is not None and c.status == "accepted")
 
 
-def worker_out(p: WorkerProfile, viewer: User, c: Connection | None = None) -> WorkerProfileOut:
-    out = WorkerProfileOut.model_validate(p)
-    out.media = [
+def _media_out(user: User) -> list[MediaOut]:
+    return [
         MediaOut(
             id=m.id,
             kind=m.kind,
@@ -51,8 +50,13 @@ def worker_out(p: WorkerProfile, viewer: User, c: Connection | None = None) -> W
             url=storage.presign_get(m.s3_key),
             created_at=m.created_at,
         )
-        for m in p.user.media
+        for m in user.media
     ]
+
+
+def worker_out(p: WorkerProfile, viewer: User, c: Connection | None = None) -> WorkerProfileOut:
+    out = WorkerProfileOut.model_validate(p)
+    out.media = _media_out(p.user)
     out.phone = p.user.phone if _reveal_phone(viewer, p.user, c) else None
     out.connection = _summary(c)
     if viewer.customer_profile is not None:
@@ -64,6 +68,7 @@ def customer_out(
     p: CustomerProfile, viewer: User, c: Connection | None = None
 ) -> CustomerProfileOut:
     out = CustomerProfileOut.model_validate(p)
+    out.media = _media_out(p.user)
     out.phone = p.user.phone if _reveal_phone(viewer, p.user, c) else None
     out.connection = _summary(c)
     if viewer.worker_profile is not None:
@@ -210,7 +215,7 @@ def list_customers(
 ):
     query = (
         db.query(CustomerProfile)
-        .options(joinedload(CustomerProfile.user))
+        .options(joinedload(CustomerProfile.user).joinedload(User.media))
         .filter(CustomerProfile.is_active.is_(True), CustomerProfile.user_id != user.id)
     )
     if city:
@@ -242,7 +247,7 @@ def matching_customers(user: User = Depends(require_worker), db: Session = Depen
         raise HTTPException(status.HTTP_404_NOT_FOUND, "finish onboarding first")
     rows = (
         db.query(CustomerProfile)
-        .options(joinedload(CustomerProfile.user))
+        .options(joinedload(CustomerProfile.user).joinedload(User.media))
         .filter(CustomerProfile.is_active.is_(True))
         .all()
     )

@@ -63,9 +63,11 @@ console (Phone Numbers → Verified Caller IDs). Upgrading the account removes t
 ### Email codes (SES)
 
 Cognito only sends login-code emails through Amazon SES, and Gmail discards SES mail that
-claims to be "from" a gmail.com address. So email login codes need a Kaam-owned domain
-verified in SES (DKIM) — not done yet; until then email login does not deliver. SES
-production access for the account was requested on 2026-09-10 (`aws sesv2 get-account`).
+claims to be "from" a gmail.com address. The pools therefore send as
+`Kaam <vidit@intensionapp.com>`; `intensionapp.com` (DNS at GoDaddy) is verified in SES
+us-west-2 with three DKIM CNAME records. SES production access for the account was requested
+on 2026-09-10 (`aws sesv2 get-account`); while in the sandbox, recipients must be verified
+identities too.
 
 ## 2. Neon (Postgres)
 

@@ -21,6 +21,20 @@ aws iam create-access-key --user-name kaam-staging-api
 aws iam create-access-key --user-name kaam-prod-api
 ```
 
+### SMS for passwordless login
+
+Cognito sends login codes by SMS through Amazon SNS. A new AWS account is in the **SNS
+SMS sandbox**: it only delivers to phone numbers you verify first. For staging that is
+fine — add each tester's number:
+
+```sh
+aws sns create-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --region us-west-2
+aws sns verify-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --one-time-password 123456 --region us-west-2
+```
+
+For production, request sandbox exit and register a sending number (toll-free
+verification or 10DLC) in the SNS console under *Text messaging (SMS)*. This takes days.
+
 ## 2. Neon (Postgres)
 
 One Neon project with two branches: `production` (prod) and `staging`. Each branch

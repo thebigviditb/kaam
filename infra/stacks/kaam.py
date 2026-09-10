@@ -13,16 +13,26 @@ class KaamStack(cdk.Stack):
         is_prod = env_name == "prod"
 
         # ---- Cognito ----
+        # Passwordless: workers sign in with a phone number + SMS code, households with
+        # phone or email + code. ESSENTIALS is the feature plan that enables OTP factors.
         pool = cognito.UserPool(
             self,
             "UserPool",
             user_pool_name=f"kaam-{env_name}",
+            feature_plan=cognito.FeaturePlan.ESSENTIALS,
             self_sign_up_enabled=True,
-            sign_in_aliases=cognito.SignInAliases(email=True),
-            auto_verify=cognito.AutoVerifiedAttrs(email=True),
-            standard_attributes=cognito.StandardAttributes(
-                email=cognito.StandardAttribute(required=True, mutable=True),
+            sign_in_aliases=cognito.SignInAliases(email=True, phone=True),
+            auto_verify=cognito.AutoVerifiedAttrs(email=True, phone=True),
+            sign_in_policy=cognito.SignInPolicy(
+                allowed_first_auth_factors=cognito.AllowedFirstAuthFactors(
+                    password=True, sms_otp=True, email_otp=True
+                )
             ),
+            standard_attributes=cognito.StandardAttributes(
+                email=cognito.StandardAttribute(required=False, mutable=True),
+                phone_number=cognito.StandardAttribute(required=False, mutable=True),
+            ),
+            sms_role_external_id=f"kaam-{env_name}-sms",
             password_policy=cognito.PasswordPolicy(
                 min_length=8,
                 require_lowercase=False,
@@ -30,7 +40,7 @@ class KaamStack(cdk.Stack):
                 require_digits=False,
                 require_symbols=False,
             ),
-            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            account_recovery=cognito.AccountRecovery.PHONE_WITHOUT_MFA_AND_EMAIL,
             user_verification=cognito.UserVerificationConfig(
                 email_subject="Your Kaam verification code",
                 email_body="Your Kaam verification code is {####}",
@@ -42,7 +52,7 @@ class KaamStack(cdk.Stack):
         client = pool.add_client(
             "WebClient",
             user_pool_client_name=f"kaam-{env_name}-web",
-            auth_flows=cognito.AuthFlow(user_srp=True, user_password=True),
+            auth_flows=cognito.AuthFlow(user=True, user_srp=True, user_password=True),
             generate_secret=False,
             access_token_validity=cdk.Duration.hours(1),
             refresh_token_validity=cdk.Duration.days(30),

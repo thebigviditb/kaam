@@ -51,7 +51,7 @@ class KaamStack(cdk.Stack):
             project_root=str(LAMBDA_DIR),
             deps_lock_file_path=str(LAMBDA_DIR / "package-lock.json"),
             bundling=nodejs.BundlingOptions(
-                format=nodejs.OutputFormat.ESM,
+                format=nodejs.OutputFormat.CJS,
                 external_modules=["@aws-sdk/*"],
             ),
             timeout=cdk.Duration.seconds(15),

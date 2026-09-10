@@ -3,21 +3,29 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants import CITIES, TAGS
+from app.constants import CITIES, DAYS, TAGS, TIMES
 
 Role = Literal["worker", "customer"]
 Language = Literal["en", "hi"]
 PayType = Literal["hourly", "daily", "monthly", "one_time"]
-JobStatus = Literal["open", "filled", "closed"]
-ApplicationStatus = Literal["pending", "accepted", "rejected"]
+StartTiming = Literal["asap", "within_2_weeks", "within_month", "flexible"]
+ConnectionStatus = Literal["pending", "accepted", "declined"]
 MediaKind = Literal["image", "video"]
 
 
-def _check_tags(tags: list[str]) -> list[str]:
-    bad = [t for t in tags if t not in TAGS]
-    if bad:
-        raise ValueError(f"unknown tags: {bad}")
-    return list(dict.fromkeys(tags))
+def _subset(allowed: list[str], what: str):
+    def check(values: list[str]) -> list[str]:
+        bad = [v for v in values if v not in allowed]
+        if bad:
+            raise ValueError(f"unknown {what}: {bad}")
+        return list(dict.fromkeys(values))
+
+    return check
+
+
+_check_tags = _subset(TAGS, "tags")
+_check_days = _subset(DAYS, "days")
+_check_times = _subset(TIMES, "times")
 
 
 def _check_city(city: str) -> str:
@@ -40,16 +48,17 @@ class UserOut(ORM):
     phone: str | None
     preferred_language: Language
     created_at: datetime
+    onboarded: bool = False
 
 
 class UserCreate(BaseModel):
     role: Role
-    phone: str | None = Field(default=None, max_length=32)
+    phone: str = Field(min_length=7, max_length=32)
     preferred_language: Language = "en"
 
 
 class UserUpdate(BaseModel):
-    phone: str | None = Field(default=None, max_length=32)
+    phone: str | None = Field(default=None, min_length=7, max_length=32)
     preferred_language: Language | None = None
 
 
@@ -82,22 +91,32 @@ class MediaRegister(BaseModel):
     content_type: str = Field(max_length=128)
 
 
+# ---- connection summary embedded in profiles ----
+
+
+class ConnectionSummary(BaseModel):
+    id: str
+    status: ConnectionStatus
+    initiated_by: Role
+
+
 # ---- worker profile ----
 
 
 class WorkerProfileIn(BaseModel):
     display_name: str = Field(min_length=1, max_length=120)
     bio: str = Field(default="", max_length=2000)
-    tags: list[str] = []
+    tags: list[str] = Field(min_length=1)
     other_tag_text: str | None = Field(default=None, max_length=255)
     years_experience: int = Field(default=0, ge=0, le=60)
     hourly_rate: float | None = Field(default=None, ge=0)
-    city: str
-    availability: str = Field(default="", max_length=255)
+    days: list[str] = Field(min_length=1)
+    times: list[str] = Field(min_length=1)
     is_visible: bool = True
 
     _tags = field_validator("tags")(_check_tags)
-    _city = field_validator("city")(_check_city)
+    _days = field_validator("days")(_check_days)
+    _times = field_validator("times")(_check_times)
 
 
 class WorkerProfileOut(ORM):
@@ -108,21 +127,35 @@ class WorkerProfileOut(ORM):
     other_tag_text: str | None
     years_experience: int
     hourly_rate: float | None
-    city: str
-    availability: str
+    days: list[str]
+    times: list[str]
     is_visible: bool
     updated_at: datetime
     media: list[MediaOut] = []
     phone: str | None = None
+    connection: ConnectionSummary | None = None
+    match_score: int = 0
 
 
-# ---- customer profile ----
+# ---- customer profile (the household's need) ----
 
 
 class CustomerProfileIn(BaseModel):
     display_name: str = Field(min_length=1, max_length=120)
     city: str
+    tags: list[str] = Field(min_length=1)
+    other_tag_text: str | None = Field(default=None, max_length=255)
+    description: str = Field(default="", max_length=4000)
+    pay_amount: float | None = Field(default=None, ge=0)
+    pay_type: PayType = "hourly"
+    start_timing: StartTiming = "flexible"
+    days: list[str] = Field(min_length=1)
+    times: list[str] = Field(min_length=1)
+    is_active: bool = True
 
+    _tags = field_validator("tags")(_check_tags)
+    _days = field_validator("days")(_check_days)
+    _times = field_validator("times")(_check_times)
     _city = field_validator("city")(_check_city)
 
 
@@ -130,88 +163,52 @@ class CustomerProfileOut(ORM):
     user_id: str
     display_name: str
     city: str
-
-
-# ---- jobs ----
-
-
-class JobIn(BaseModel):
-    title: str = Field(min_length=1, max_length=160)
-    tags: list[str] = Field(min_length=1)
-    other_tag_text: str | None = Field(default=None, max_length=255)
-    description: str = Field(default="", max_length=4000)
-    pay_amount: float = Field(gt=0)
-    pay_type: PayType
-    city: str
-    schedule: str = Field(default="", max_length=255)
-
-    _tags = field_validator("tags")(_check_tags)
-    _city = field_validator("city")(_check_city)
-
-
-class JobUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=1, max_length=160)
-    tags: list[str] | None = None
-    other_tag_text: str | None = None
-    description: str | None = Field(default=None, max_length=4000)
-    pay_amount: float | None = Field(default=None, gt=0)
-    pay_type: PayType | None = None
-    city: str | None = None
-    schedule: str | None = Field(default=None, max_length=255)
-    status: JobStatus | None = None
-
-    @field_validator("tags")
-    @classmethod
-    def _tags(cls, v):
-        return _check_tags(v) if v is not None else v
-
-    @field_validator("city")
-    @classmethod
-    def _city(cls, v):
-        return _check_city(v) if v is not None else v
-
-
-class JobOut(ORM):
-    id: str
-    customer_id: str
-    customer_name: str = ""
-    title: str
     tags: list[str]
     other_tag_text: str | None
     description: str
-    pay_amount: float
+    pay_amount: float | None
     pay_type: PayType
-    city: str
-    schedule: str
-    status: JobStatus
-    created_at: datetime
-    application_count: int = 0
-    my_application_status: ApplicationStatus | None = None
+    start_timing: StartTiming
+    days: list[str]
+    times: list[str]
+    is_active: bool
+    updated_at: datetime
+    phone: str | None = None
+    connection: ConnectionSummary | None = None
+    match_score: int = 0
 
 
-# ---- applications ----
+# ---- connections ----
 
 
-class ApplicationIn(BaseModel):
+class ConnectionCreate(BaseModel):
+    """A worker passes customer_id; a customer passes worker_id."""
+
+    customer_id: str | None = None
+    worker_id: str | None = None
     message: str = Field(default="", max_length=2000)
 
 
-class ApplicationUpdate(BaseModel):
-    status: Literal["accepted", "rejected"]
+class ConnectionDecision(BaseModel):
+    status: Literal["accepted", "declined"]
 
 
-class ApplicationOut(ORM):
+class ConnectionOut(BaseModel):
     id: str
-    job_id: str
+    customer_id: str
     worker_id: str
+    initiated_by: Role
     message: str
-    status: ApplicationStatus
+    status: ConnectionStatus
     created_at: datetime
-    job: JobOut | None = None
     worker: WorkerProfileOut | None = None
+    customer: CustomerProfileOut | None = None
 
 
 class MetaOut(BaseModel):
     tags: list[str]
     cities: list[str]
     pay_types: list[str]
+    days: list[str]
+    times: list[str]
+    start_timings: list[str]

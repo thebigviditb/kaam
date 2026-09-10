@@ -1,7 +1,17 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -38,6 +48,8 @@ class User(Base):
 
 
 class WorkerProfile(Base):
+    """What a worker can do and when they are available. Location is not tracked."""
+
     __tablename__ = "worker_profiles"
 
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
@@ -47,8 +59,8 @@ class WorkerProfile(Base):
     other_tag_text: Mapped[str | None] = mapped_column(String(255))
     years_experience: Mapped[int] = mapped_column(Integer, default=0)
     hourly_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    city: Mapped[str] = mapped_column(String(64), index=True)
-    availability: Mapped[str] = mapped_column(String(255), default="")
+    days: Mapped[list[str]] = mapped_column(JSON, default=list)
+    times: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
@@ -56,52 +68,44 @@ class WorkerProfile(Base):
 
 
 class CustomerProfile(Base):
+    """A household's need: what work, where, when, and what they expect to pay."""
+
     __tablename__ = "customer_profiles"
 
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(120))
-    city: Mapped[str] = mapped_column(String(64))
+    city: Mapped[str] = mapped_column(String(64), index=True)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    other_tag_text: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text, default="")
+    pay_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    pay_type: Mapped[str] = mapped_column(String(16), default="hourly")
+    start_timing: Mapped[str] = mapped_column(String(32), default="flexible")
+    days: Mapped[list[str]] = mapped_column(JSON, default=list)
+    times: Mapped[list[str]] = mapped_column(JSON, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
     user: Mapped[User] = relationship(back_populates="customer_profile")
 
 
-class Job(Base):
-    __tablename__ = "jobs"
+class Connection(Base):
+    """A worker and a customer reaching out to each other. One per pair."""
+
+    __tablename__ = "connections"
+    __table_args__ = (UniqueConstraint("customer_id", "worker_id", name="uq_connection_pair"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     customer_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    title: Mapped[str] = mapped_column(String(160))
-    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
-    other_tag_text: Mapped[str | None] = mapped_column(String(255))
-    description: Mapped[str] = mapped_column(Text, default="")
-    pay_amount: Mapped[float] = mapped_column(Numeric(10, 2))
-    pay_type: Mapped[str] = mapped_column(String(16))
-    city: Mapped[str] = mapped_column(String(64), index=True)
-    schedule: Mapped[str] = mapped_column(String(255), default="")
-    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
-
-    customer: Mapped[User] = relationship()
-    applications: Mapped[list["Application"]] = relationship(
-        back_populates="job", cascade="all, delete-orphan"
-    )
-
-
-class Application(Base):
-    __tablename__ = "applications"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("jobs.id"), index=True)
     worker_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    initiated_by: Mapped[str] = mapped_column(String(16))  # worker | customer
     message: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(16), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
-    job: Mapped[Job] = relationship(back_populates="applications")
-    worker: Mapped[User] = relationship()
+    customer: Mapped[User] = relationship(foreign_keys=[customer_id])
+    worker: Mapped[User] = relationship(foreign_keys=[worker_id])
 
 
 class Media(Base):

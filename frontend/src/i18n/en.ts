@@ -212,7 +212,7 @@ export const en = {
     'conn.you': 'You',
 
     'chat.title': 'Chat',
-    'chat.empty': "Say namaste 👋 — you're connected with {name}.",
+    'chat.empty': "You're connected with {name}. Say hello!",
     'chat.placeholder': 'Type a message…',
     'chat.send': 'Send',
     'chat.viewProfile': 'View profile',

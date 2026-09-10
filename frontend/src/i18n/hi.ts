@@ -214,7 +214,7 @@ export const hi: Table = {
     'conn.you': 'आप',
 
     'chat.title': 'चैट',
-    'chat.empty': 'नमस्ते कहें 👋 — आप {name} से जुड़ गए हैं।',
+    'chat.empty': 'आप {name} से जुड़ गए हैं। नमस्ते कहें!',
     'chat.placeholder': 'संदेश लिखें…',
     'chat.send': 'भेजें',
     'chat.viewProfile': 'प्रोफ़ाइल देखें',

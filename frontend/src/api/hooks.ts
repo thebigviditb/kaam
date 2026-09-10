@@ -2,11 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './api';
 import type {
-  ApplicationStatus,
+  ConnectionCreate,
+  ConnectionDecision,
+  CustomerFilters,
   CustomerProfileIn,
-  JobFilters,
-  JobIn,
-  JobUpdate,
   MediaRegister,
   UserCreate,
   UserUpdate,
@@ -21,14 +20,13 @@ export const keys = {
   workerProfile: ['workers', 'me'] as const,
   customerProfile: ['customers', 'me'] as const,
   workers: (f: WorkerFilters) => ['workers', 'list', f] as const,
+  matchingWorkers: ['workers', 'matching'] as const,
   worker: (id: string) => ['workers', id] as const,
+  customers: (f: CustomerFilters) => ['customers', 'list', f] as const,
+  matchingCustomers: ['customers', 'matching'] as const,
+  customer: (id: string) => ['customers', id] as const,
   media: ['media'] as const,
-  jobs: (f: JobFilters) => ['jobs', 'list', f] as const,
-  matchingJobs: ['jobs', 'matching'] as const,
-  myJobs: ['jobs', 'mine'] as const,
-  job: (id: string) => ['jobs', id] as const,
-  jobApplications: (id: string) => ['jobs', id, 'applications'] as const,
-  myApplications: ['applications', 'me'] as const,
+  connections: ['connections'] as const,
 };
 
 function useSignedIn() {
@@ -78,13 +76,18 @@ export function useUpsertWorkerProfile() {
     mutationFn: (body: WorkerProfileIn) => api.upsertMyWorkerProfile(body),
     onSuccess: (p) => {
       qc.setQueryData(keys.workerProfile, p);
-      qc.invalidateQueries({ queryKey: keys.matchingJobs });
+      qc.invalidateQueries({ queryKey: keys.me });
+      qc.invalidateQueries({ queryKey: keys.matchingCustomers });
     },
   });
 }
 
 export function useWorkers(filters: WorkerFilters) {
   return useQuery({ queryKey: keys.workers(filters), queryFn: () => api.listWorkers(filters) });
+}
+
+export function useMatchingWorkers() {
+  return useQuery({ queryKey: keys.matchingWorkers, queryFn: api.matchingWorkers, retry: false });
 }
 
 export function useWorker(id: string | undefined) {
@@ -113,8 +116,32 @@ export function useUpsertCustomerProfile() {
     mutationFn: (body: CustomerProfileIn) => api.upsertMyCustomerProfile(body),
     onSuccess: (p) => {
       qc.setQueryData(keys.customerProfile, p);
-      qc.invalidateQueries({ queryKey: keys.myJobs });
+      qc.invalidateQueries({ queryKey: keys.me });
+      qc.invalidateQueries({ queryKey: keys.matchingWorkers });
     },
+  });
+}
+
+export function useCustomers(filters: CustomerFilters) {
+  return useQuery({
+    queryKey: keys.customers(filters),
+    queryFn: () => api.listCustomers(filters),
+  });
+}
+
+export function useMatchingCustomers() {
+  return useQuery({
+    queryKey: keys.matchingCustomers,
+    queryFn: api.matchingCustomers,
+    retry: false,
+  });
+}
+
+export function useCustomer(id: string | undefined) {
+  return useQuery({
+    queryKey: keys.customer(id ?? ''),
+    queryFn: () => api.getCustomer(id as string),
+    enabled: Boolean(id),
   });
 }
 
@@ -147,86 +174,44 @@ export function useDeleteMedia() {
   });
 }
 
-// ---- jobs ----
+// ---- connections ----
 
-export function useJobs(filters: JobFilters, enabled = true) {
-  return useQuery({ queryKey: keys.jobs(filters), queryFn: () => api.listJobs(filters), enabled });
-}
-
-export function useMatchingJobs(enabled = true) {
-  return useQuery({ queryKey: keys.matchingJobs, queryFn: api.matchingJobs, enabled, retry: false });
-}
-
-export function useMyJobs() {
-  return useQuery({ queryKey: keys.myJobs, queryFn: api.myJobs });
-}
-
-export function useJob(id: string | undefined) {
-  return useQuery({
-    queryKey: keys.job(id ?? ''),
-    queryFn: () => api.getJob(id as string),
-    enabled: Boolean(id),
-  });
-}
-
-export function useCreateJob() {
+function useInvalidateConnectionViews() {
   const qc = useQueryClient();
+  // Every profile response embeds the viewer's connection state, so refresh them all.
+  return () => {
+    qc.invalidateQueries({ queryKey: keys.connections });
+    qc.invalidateQueries({ queryKey: ['workers'] });
+    qc.invalidateQueries({ queryKey: ['customers'] });
+  };
+}
+
+export function useMyConnections() {
+  const enabled = useSignedIn();
+  return useQuery({ queryKey: keys.connections, queryFn: api.myConnections, enabled });
+}
+
+export function useCreateConnection() {
+  const invalidate = useInvalidateConnectionViews();
   return useMutation({
-    mutationFn: (body: JobIn) => api.createJob(body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.myJobs });
-      qc.invalidateQueries({ queryKey: ['jobs', 'list'] });
-    },
+    mutationFn: (body: ConnectionCreate) => api.createConnection(body),
+    onSuccess: invalidate,
   });
 }
 
-export function useUpdateJob(id: string) {
-  const qc = useQueryClient();
+export function useDecideConnection() {
+  const invalidate = useInvalidateConnectionViews();
   return useMutation({
-    mutationFn: (body: JobUpdate) => api.updateJob(id, body),
-    onSuccess: (job) => {
-      qc.setQueryData(keys.job(id), job);
-      qc.invalidateQueries({ queryKey: keys.myJobs });
-      qc.invalidateQueries({ queryKey: ['jobs', 'list'] });
-    },
+    mutationFn: ({ id, status }: { id: string } & ConnectionDecision) =>
+      api.decideConnection(id, { status }),
+    onSuccess: invalidate,
   });
 }
 
-// ---- applications ----
-
-export function useApply(jobId: string) {
-  const qc = useQueryClient();
+export function useWithdrawConnection() {
+  const invalidate = useInvalidateConnectionViews();
   return useMutation({
-    mutationFn: (message: string) => api.apply(jobId, message),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.job(jobId) });
-      qc.invalidateQueries({ queryKey: ['jobs'] });
-      qc.invalidateQueries({ queryKey: keys.myApplications });
-    },
-  });
-}
-
-export function useJobApplications(jobId: string | undefined) {
-  return useQuery({
-    queryKey: keys.jobApplications(jobId ?? ''),
-    queryFn: () => api.jobApplications(jobId as string),
-    enabled: Boolean(jobId),
-  });
-}
-
-export function useMyApplications() {
-  return useQuery({ queryKey: keys.myApplications, queryFn: api.myApplications });
-}
-
-export function useDecideApplication(jobId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: Exclude<ApplicationStatus, 'pending'> }) =>
-      api.decideApplication(id, status),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.jobApplications(jobId) });
-      qc.invalidateQueries({ queryKey: keys.job(jobId) });
-      qc.invalidateQueries({ queryKey: keys.myJobs });
-    },
+    mutationFn: (id: string) => api.withdrawConnection(id),
+    onSuccess: invalidate,
   });
 }

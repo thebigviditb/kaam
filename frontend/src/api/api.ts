@@ -1,13 +1,11 @@
 import { isApiError, request } from './client';
 import type {
-  Application,
-  ApplicationStatus,
+  Connection,
+  ConnectionCreate,
+  ConnectionDecision,
+  CustomerFilters,
   CustomerProfile,
   CustomerProfileIn,
-  Job,
-  JobFilters,
-  JobIn,
-  JobUpdate,
   Media,
   MediaRegister,
   Meta,
@@ -45,12 +43,17 @@ export const api = {
     request<WorkerProfile>('PUT', '/workers/me', { body }),
   listWorkers: (filters: WorkerFilters = {}) =>
     request<WorkerProfile[]>('GET', '/workers', { query: filters }),
+  matchingWorkers: () => request<WorkerProfile[]>('GET', '/workers/matching'),
   getWorker: (userId: string) => request<WorkerProfile>('GET', `/workers/${userId}`),
 
-  // customer profile
+  // customer profile (the need)
   getMyCustomerProfile: () => nullOn404(request<CustomerProfile>('GET', '/customers/me')),
   upsertMyCustomerProfile: (body: CustomerProfileIn) =>
     request<CustomerProfile>('PUT', '/customers/me', { body }),
+  listCustomers: (filters: CustomerFilters = {}) =>
+    request<CustomerProfile[]>('GET', '/customers', { query: filters }),
+  matchingCustomers: () => request<CustomerProfile[]>('GET', '/customers/matching'),
+  getCustomer: (userId: string) => request<CustomerProfile>('GET', `/customers/${userId}`),
 
   // media
   presignMedia: (body: PresignRequest) =>
@@ -59,23 +62,13 @@ export const api = {
   listMyMedia: () => request<Media[]>('GET', '/media'),
   deleteMedia: (id: string) => request<void>('DELETE', `/media/${id}`),
 
-  // jobs
-  createJob: (body: JobIn) => request<Job>('POST', '/jobs', { body }),
-  listJobs: (filters: JobFilters = {}) => request<Job[]>('GET', '/jobs', { query: filters }),
-  matchingJobs: () => request<Job[]>('GET', '/jobs/matching'),
-  myJobs: () => request<Job[]>('GET', '/jobs/mine'),
-  getJob: (id: string) => request<Job>('GET', `/jobs/${id}`),
-  updateJob: (id: string, body: JobUpdate) => request<Job>('PATCH', `/jobs/${id}`, { body }),
-  deleteJob: (id: string) => request<void>('DELETE', `/jobs/${id}`),
-
-  // applications
-  apply: (jobId: string, message: string) =>
-    request<Application>('POST', `/jobs/${jobId}/apply`, { body: { message } }),
-  jobApplications: (jobId: string) =>
-    request<Application[]>('GET', `/jobs/${jobId}/applications`),
-  myApplications: () => request<Application[]>('GET', '/applications/me'),
-  decideApplication: (id: string, status: Exclude<ApplicationStatus, 'pending'>) =>
-    request<Application>('PATCH', `/applications/${id}`, { body: { status } }),
+  // connections
+  createConnection: (body: ConnectionCreate) =>
+    request<Connection>('POST', '/connections', { body }),
+  myConnections: () => request<Connection[]>('GET', '/connections/me'),
+  decideConnection: (id: string, body: ConnectionDecision) =>
+    request<Connection>('PATCH', `/connections/${id}`, { body }),
+  withdrawConnection: (id: string) => request<void>('DELETE', `/connections/${id}`),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

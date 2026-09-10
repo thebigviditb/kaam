@@ -3,9 +3,18 @@
 export type Role = 'worker' | 'customer';
 export type Language = 'en' | 'hi';
 export type PayType = 'hourly' | 'daily' | 'monthly' | 'one_time';
-export type JobStatus = 'open' | 'filled' | 'closed';
-export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export type StartTiming = 'asap' | 'within_2_weeks' | 'within_month' | 'flexible';
+export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
 export type MediaKind = 'image' | 'video';
+export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening';
+
+export const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+export const TIMES: TimeOfDay[] = ['morning', 'afternoon', 'evening'];
+export const START_TIMINGS: StartTiming[] = ['asap', 'within_2_weeks', 'within_month', 'flexible'];
+export const PAY_TYPES: PayType[] = ['hourly', 'daily', 'monthly', 'one_time'];
+
+// ---- users / me ----
 
 export type User = {
   id: string;
@@ -14,18 +23,21 @@ export type User = {
   phone: string | null;
   preferred_language: Language;
   created_at: string;
+  onboarded: boolean;
 };
 
 export type UserCreate = {
   role: Role;
-  phone?: string | null;
+  phone: string;
   preferred_language?: Language;
 };
 
 export type UserUpdate = {
-  phone?: string | null;
+  phone?: string;
   preferred_language?: Language;
 };
+
+// ---- media ----
 
 export type Media = {
   id: string;
@@ -53,6 +65,16 @@ export type MediaRegister = {
   content_type: string;
 };
 
+// ---- connection summary embedded in profiles ----
+
+export type ConnectionSummary = {
+  id: string;
+  status: ConnectionStatus;
+  initiated_by: Role;
+};
+
+// ---- worker profile ----
+
 export type WorkerProfileIn = {
   display_name: string;
   bio: string;
@@ -60,8 +82,8 @@ export type WorkerProfileIn = {
   other_tag_text: string | null;
   years_experience: number;
   hourly_rate: number | null;
-  city: string;
-  availability: string;
+  days: string[];
+  times: string[];
   is_visible: boolean;
 };
 
@@ -70,68 +92,83 @@ export type WorkerProfile = WorkerProfileIn & {
   updated_at: string;
   media: Media[];
   phone: string | null;
+  connection: ConnectionSummary | null;
+  match_score: number;
 };
+
+// ---- customer profile (the household's need) ----
 
 export type CustomerProfileIn = {
   display_name: string;
   city: string;
-};
-
-export type CustomerProfile = CustomerProfileIn & { user_id: string };
-
-export type JobIn = {
-  title: string;
   tags: string[];
   other_tag_text: string | null;
   description: string;
-  pay_amount: number;
+  pay_amount: number | null;
   pay_type: PayType;
-  city: string;
-  schedule: string;
+  start_timing: StartTiming;
+  days: string[];
+  times: string[];
+  is_active: boolean;
 };
 
-export type JobUpdate = Partial<JobIn> & { status?: JobStatus };
+export type CustomerProfile = CustomerProfileIn & {
+  user_id: string;
+  updated_at: string;
+  phone: string | null;
+  connection: ConnectionSummary | null;
+  match_score: number;
+};
 
-export type Job = JobIn & {
+// ---- connections ----
+
+export type ConnectionCreate = {
+  customer_id?: string;
+  worker_id?: string;
+  message: string;
+};
+
+export type ConnectionDecision = { status: 'accepted' | 'declined' };
+
+export type Connection = {
   id: string;
   customer_id: string;
-  customer_name: string;
-  status: JobStatus;
-  created_at: string;
-  application_count: number;
-  my_application_status: ApplicationStatus | null;
-};
-
-export type Application = {
-  id: string;
-  job_id: string;
   worker_id: string;
+  initiated_by: Role;
   message: string;
-  status: ApplicationStatus;
+  status: ConnectionStatus;
   created_at: string;
-  job: Job | null;
   worker: WorkerProfile | null;
+  customer: CustomerProfile | null;
 };
 
 export type Meta = {
   tags: string[];
   cities: string[];
   pay_types: PayType[];
+  days: Day[];
+  times: TimeOfDay[];
+  start_timings: StartTiming[];
 };
 
-export type JobFilters = {
-  tags?: string[];
-  city?: string;
-  min_pay?: number;
-  pay_type?: PayType;
-  q?: string;
-  status?: JobStatus | 'all';
-};
+// ---- list filters (query strings) ----
 
 export type WorkerFilters = {
   tags?: string[];
-  city?: string;
+  days?: string[];
+  times?: string[];
   max_rate?: number;
   min_experience?: number;
+  q?: string;
+};
+
+export type CustomerFilters = {
+  tags?: string[];
+  days?: string[];
+  times?: string[];
+  city?: string;
+  min_pay?: number;
+  pay_type?: PayType;
+  start_timing?: StartTiming;
   q?: string;
 };

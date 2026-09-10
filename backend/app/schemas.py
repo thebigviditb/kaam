@@ -98,6 +98,7 @@ class ConnectionSummary(BaseModel):
     id: str
     status: ConnectionStatus
     initiated_by: Role
+    message: str = ""
 
 
 # ---- worker profile ----

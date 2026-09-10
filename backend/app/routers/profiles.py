@@ -30,7 +30,11 @@ def connection_between(db: Session, customer_id: str, worker_id: str) -> Connect
 
 
 def _summary(c: Connection | None) -> ConnectionSummary | None:
-    return ConnectionSummary(id=c.id, status=c.status, initiated_by=c.initiated_by) if c else None
+    if c is None:
+        return None
+    return ConnectionSummary(
+        id=c.id, status=c.status, initiated_by=c.initiated_by, message=c.message
+    )
 
 
 def _reveal_phone(viewer: User, owner: User, c: Connection | None) -> bool:

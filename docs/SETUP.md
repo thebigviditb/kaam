@@ -4,11 +4,15 @@ Everything below is done once. After that, pushing to `staging` or `main` deploy
 
 ## 1. AWS (Cognito + S3) — `cdk deploy`
 
-From `infra/` with your AWS CLI logged in (region us-west-2):
+Kaam lives in AWS account **003018976921** (Vidit's own account, the `intension` CLI profile).
+Use that profile for everything below; the `default` profile on this Mac is a different
+company's account.
+
+From `infra/` (region us-west-2):
 
 ```sh
 cd infra && uv sync
-npx -y aws-cdk@latest deploy kaam-github kaam-staging kaam-prod --require-approval never --outputs-file cdk.outputs.json
+AWS_PROFILE=intension npx -y aws-cdk@latest deploy kaam-github kaam-staging kaam-prod --require-approval never --outputs-file cdk.outputs.json
 ```
 
 `cdk.outputs.json` now holds, per environment: `UserPoolId`, `UserPoolClientId`,
@@ -58,10 +62,10 @@ console (Phone Numbers → Verified Caller IDs). Upgrading the account removes t
 
 ### Email codes (SES)
 
-Cognito only sends login-code emails through Amazon SES, so the pools send from a verified
-SES identity (`vidit.batta@gmail.com`, us-west-2). While the SES account is in the sandbox,
-recipients must also be verified identities; production access was requested on 2026-09-10
-(`aws sesv2 get-account --region us-west-2` shows the review status).
+Cognito only sends login-code emails through Amazon SES, and Gmail discards SES mail that
+claims to be "from" a gmail.com address. So email login codes need a Kaam-owned domain
+verified in SES (DKIM) — not done yet; until then email login does not deliver. SES
+production access for the account was requested on 2026-09-10 (`aws sesv2 get-account`).
 
 ## 2. Neon (Postgres)
 

@@ -78,7 +78,8 @@ for audio streaming. Nothing in the web app has to change for that.
 | users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language |
 | worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
-| connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined); unique per pair |
+| connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
+| messages         | id, connection_id, sender_id, body, created_at |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
 
 **Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
@@ -99,6 +100,7 @@ GET /workers/matching       GET /workers/{id}
 GET/PUT /customers/me       GET /customers?tags=&days=&times=&city=&min_pay=&pay_type=&start_timing=&q=
 GET /customers/matching     GET /customers/{id}      ← the voice agent's "what work is there for me?"
 POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
+GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
 POST /media/presign         POST /media              DELETE /media/{id}
 ```
 

@@ -194,6 +194,18 @@ class ConnectionDecision(BaseModel):
     status: Literal["accepted", "declined"]
 
 
+class ChatMessage(ORM):
+    id: str
+    connection_id: str
+    sender_id: str
+    body: str
+    created_at: datetime
+
+
+class ChatMessageIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
 class ConnectionOut(BaseModel):
     id: str
     customer_id: str
@@ -204,6 +216,8 @@ class ConnectionOut(BaseModel):
     created_at: datetime
     worker: WorkerProfileOut | None = None
     customer: CustomerProfileOut | None = None
+    last_message: ChatMessage | None = None
+    unread_count: int = 0
 
 
 class MetaOut(BaseModel):

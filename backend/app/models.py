@@ -104,8 +104,28 @@ class Connection(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
 
+    customer_last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    worker_last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     customer: Mapped[User] = relationship(foreign_keys=[customer_id])
     worker: Mapped[User] = relationship(foreign_keys=[worker_id])
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates="connection", cascade="all, delete-orphan", order_by="Message.created_at"
+    )
+
+
+class Message(Base):
+    """A chat message inside an accepted connection."""
+
+    __tablename__ = "messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    connection_id: Mapped[str] = mapped_column(String(36), ForeignKey("connections.id"), index=True)
+    sender_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+
+    connection: Mapped[Connection] = relationship(back_populates="messages")
 
 
 class Media(Base):

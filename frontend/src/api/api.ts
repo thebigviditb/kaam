@@ -1,5 +1,7 @@
 import { isApiError, request } from './client';
 import type {
+  ChatMessage,
+  ChatMessageCreate,
   Connection,
   ConnectionCreate,
   ConnectionDecision,
@@ -69,6 +71,15 @@ export const api = {
   decideConnection: (id: string, body: ConnectionDecision) =>
     request<Connection>('PATCH', `/connections/${id}`, { body }),
   withdrawConnection: (id: string) => request<void>('DELETE', `/connections/${id}`),
+
+  // chat (accepted connections only)
+  listMessages: (connectionId: string, after?: string, limit = 100) =>
+    request<ChatMessage[]>('GET', `/connections/${connectionId}/messages`, {
+      query: { after, limit },
+    }),
+  sendMessage: (connectionId: string, body: ChatMessageCreate) =>
+    request<ChatMessage>('POST', `/connections/${connectionId}/messages`, { body }),
+  markRead: (connectionId: string) => request<void>('POST', `/connections/${connectionId}/read`),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

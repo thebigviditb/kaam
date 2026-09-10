@@ -130,6 +130,13 @@ export type ConnectionCreate = {
 
 export type ConnectionDecision = { status: 'accepted' | 'declined' };
 
+export type LastMessage = {
+  id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
 export type Connection = {
   id: string;
   customer_id: string;
@@ -140,7 +147,21 @@ export type Connection = {
   created_at: string;
   worker: WorkerProfile | null;
   customer: CustomerProfile | null;
+  last_message: LastMessage | null;
+  unread_count: number;
 };
+
+// ---- chat ----
+
+export type ChatMessage = {
+  id: string;
+  connection_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type ChatMessageCreate = { body: string };
 
 export type Meta = {
   tags: string[];

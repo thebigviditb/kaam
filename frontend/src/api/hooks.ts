@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { api } from './api';
 import type {
+  ChatMessage,
+  Connection,
   ConnectionCreate,
   ConnectionDecision,
   CustomerFilters,
@@ -27,6 +30,7 @@ export const keys = {
   customer: (id: string) => ['customers', id] as const,
   media: ['media'] as const,
   connections: ['connections'] as const,
+  messages: (connectionId: string) => ['connections', connectionId, 'messages'] as const,
 };
 
 function useSignedIn() {
@@ -186,9 +190,23 @@ function useInvalidateConnectionViews() {
   };
 }
 
+/** Polled every 15 s (and on focus) so unread badges and chat previews stay fresh without websockets. */
 export function useMyConnections() {
   const enabled = useSignedIn();
-  return useQuery({ queryKey: keys.connections, queryFn: api.myConnections, enabled });
+  return useQuery({
+    queryKey: keys.connections,
+    queryFn: api.myConnections,
+    enabled,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    staleTime: 5_000,
+  });
+}
+
+/** Sum of unread messages across accepted connections (for the Connections tab badge). */
+export function useUnreadTotal(): number {
+  const conns = useMyConnections();
+  return (conns.data ?? []).reduce((n, c) => n + (c.status === 'accepted' ? c.unread_count ?? 0 : 0), 0);
 }
 
 export function useCreateConnection() {
@@ -214,4 +232,114 @@ export function useWithdrawConnection() {
     mutationFn: (id: string) => api.withdrawConnection(id),
     onSuccess: invalidate,
   });
+}
+
+// ---- chat ----
+
+function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
+  if (incoming.length === 0) return existing;
+  const seen = new Set(existing.map((m) => m.id));
+  const fresh = incoming.filter((m) => !seen.has(m.id));
+  if (fresh.length === 0) return existing;
+  return [...existing, ...fresh].sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
+/**
+ * Messages for one accepted connection, oldest→newest. The first load fetches
+ * everything; afterwards a 3 s poll asks only for messages after the last known
+ * id and appends them. Optimistic sends land in the same cache.
+ */
+export function useMessages(connectionId: string | undefined, { enabled = true } = {}) {
+  const qc = useQueryClient();
+  const signedIn = useSignedIn();
+  const key = keys.messages(connectionId ?? '');
+  const on = signedIn && enabled && Boolean(connectionId);
+
+  const query = useQuery({
+    queryKey: key,
+    queryFn: () => api.listMessages(connectionId as string),
+    enabled: on,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const loaded = query.isSuccess;
+  useEffect(() => {
+    if (!on || !loaded) return;
+    let cancelled = false;
+    const tick = async () => {
+      const cur = qc.getQueryData<ChatMessage[]>(key) ?? [];
+      const last = [...cur].reverse().find((m) => !m.id.startsWith('tmp-'));
+      try {
+        const next = await api.listMessages(connectionId as string, last?.id);
+        if (cancelled || next.length === 0) return;
+        qc.setQueryData<ChatMessage[]>(key, (old) => mergeMessages(old ?? [], next));
+      } catch {
+        // transient; the next tick retries
+      }
+    };
+    const id = setInterval(tick, 3_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on, loaded, connectionId, qc]);
+
+  return query;
+}
+
+export function useSendMessage(connectionId: string, myUserId: string) {
+  const qc = useQueryClient();
+  const key = keys.messages(connectionId);
+  return useMutation({
+    mutationFn: (body: string) => api.sendMessage(connectionId, { body }),
+    onMutate: async (body) => {
+      const tmp: ChatMessage = {
+        id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        connection_id: connectionId,
+        sender_id: myUserId,
+        body,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<ChatMessage[]>(key, (old) => [...(old ?? []), tmp]);
+      return { tmpId: tmp.id };
+    },
+    onSuccess: (msg, _body, ctx) => {
+      qc.setQueryData<ChatMessage[]>(key, (old) => {
+        const rest = (old ?? []).filter((m) => m.id !== ctx?.tmpId && m.id !== msg.id);
+        return mergeMessages(rest, [msg]);
+      });
+      qc.setQueryData<Connection[]>(keys.connections, (old) =>
+        old?.map((c) =>
+          c.id === connectionId
+            ? { ...c, last_message: { id: msg.id, sender_id: msg.sender_id, body: msg.body, created_at: msg.created_at } }
+            : c,
+        ),
+      );
+    },
+    onError: (_e, _body, ctx) => {
+      qc.setQueryData<ChatMessage[]>(key, (old) => (old ?? []).filter((m) => m.id !== ctx?.tmpId));
+    },
+  });
+}
+
+/** Marks a chat read on the server and zeroes the local unread count immediately. */
+export function useMarkRead(connectionId: string) {
+  const qc = useQueryClient();
+  const inFlight = useRef(false);
+  return useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    qc.setQueryData<Connection[]>(keys.connections, (old) =>
+      old?.map((c) => (c.id === connectionId ? { ...c, unread_count: 0 } : c)),
+    );
+    try {
+      await api.markRead(connectionId);
+    } catch {
+      // best-effort
+    } finally {
+      inFlight.current = false;
+    }
+  }, [qc, connectionId]);
 }

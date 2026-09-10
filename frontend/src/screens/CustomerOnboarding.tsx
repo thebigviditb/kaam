@@ -12,6 +12,7 @@ import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
+import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 
 const TOTAL = 5;
 
@@ -63,6 +64,7 @@ export function CustomerOnboarding() {
         is_active: true,
       });
       qc.setQueryData<User | null>(keys.me, (u) => (u ? { ...u, onboarded: true } : u));
+      await queueMatchesWelcome();
       router.replace('/(customer)/matches');
     } catch (e) {
       setError(errorMessage(e));

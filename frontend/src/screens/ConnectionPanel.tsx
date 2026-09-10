@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -26,6 +27,7 @@ export function ConnectionPanel({
   phone: string | null;
 }) {
   const { t } = useI18n();
+  const router = useRouter();
   const create = useCreateConnection();
   const decide = useDecideConnection();
   const withdraw = useWithdrawConnection();
@@ -40,6 +42,10 @@ export function ConnectionPanel({
     } catch (e) {
       setError(errorMessage(e));
     }
+  };
+  const openChat = (id: string) => {
+    if (viewerRole === 'worker') router.push({ pathname: '/(worker)/chat/[id]', params: { id } });
+    else router.push({ pathname: '/(customer)/chat/[id]', params: { id } });
   };
 
   if (!connection) {
@@ -108,7 +114,12 @@ export function ConnectionPanel({
             title={t('conn.accept')}
             small
             loading={decide.isPending}
-            onPress={() => run(() => decide.mutateAsync({ id: connection.id, status: 'accepted' }))}
+            onPress={() =>
+              run(async () => {
+                await decide.mutateAsync({ id: connection.id, status: 'accepted' });
+                openChat(connection.id);
+              })
+            }
           />
           <Button
             title={t('conn.decline')}
@@ -129,7 +140,10 @@ export function ConnectionPanel({
     return (
       <View style={[s.box, { borderColor: colors.success, backgroundColor: colors.successSoft }]}>
         <Text style={[text.h3, { marginBottom: spacing.sm, color: colors.success }]}>{t('conn.acceptedHint')}</Text>
-        {phone ? <PhoneLink phone={phone} /> : null}
+        <Row>
+          <Button title={t('conn.openChat')} onPress={() => openChat(connection.id)} />
+          {phone ? <PhoneLink phone={phone} /> : null}
+        </Row>
       </View>
     );
   }

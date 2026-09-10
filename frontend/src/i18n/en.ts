@@ -87,6 +87,8 @@ export const en = {
     'auth.devUserId': 'Dev user id',
     'auth.devSignIn': 'Sign in as dev user',
     'auth.emailRequired': 'Enter your email',
+    'auth.smsConsent':
+      'By continuing you agree to receive a one-time login code from Kaam by SMS. Message and data rates may apply. Reply STOP to opt out.',
 
     'role.title': 'How will you use Kaam?',
     'role.subtitle': 'You can not change this later.',

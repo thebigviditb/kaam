@@ -8,15 +8,20 @@ export function Chip({
   selected,
   onPress,
   small,
+  big,
 }: {
   label: string;
   selected?: boolean;
   onPress?: () => void;
   small?: boolean;
+  /** Large tap target for onboarding questions. */
+  big?: boolean;
 }) {
   const body = (
-    <View style={[s.chip, small && s.chipSmall, selected && s.chipSelected]}>
-      <Text style={[s.text, small && { fontSize: 12 }, selected && s.textSelected]}>{label}</Text>
+    <View style={[s.chip, small && s.chipSmall, big && s.chipBig, selected && s.chipSelected]}>
+      <Text style={[s.text, small && { fontSize: 12 }, big && { fontSize: 17 }, selected && s.textSelected]}>
+        {label}
+      </Text>
     </View>
   );
   if (!onPress) return body;
@@ -32,18 +37,20 @@ export function ChipGroup<T extends string>({
   value,
   onChange,
   labelFor,
+  big,
 }: {
   options: T[];
   value: T[];
   onChange: (next: T[]) => void;
   labelFor: (v: T) => string;
+  big?: boolean;
 }) {
   const toggle = (v: T) =>
     onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   return (
     <View style={s.group}>
       {options.map((o) => (
-        <Chip key={o} label={labelFor(o)} selected={value.includes(o)} onPress={() => toggle(o)} />
+        <Chip key={o} label={labelFor(o)} selected={value.includes(o)} onPress={() => toggle(o)} big={big} />
       ))}
     </View>
   );
@@ -85,6 +92,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   chipSmall: { paddingHorizontal: 10, paddingVertical: 4 },
+  chipBig: { paddingHorizontal: 18, paddingVertical: 14, borderRadius: 14, minWidth: 96, alignItems: 'center' },
   chipSelected: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   text: { fontSize: 14, color: colors.text },
   textSelected: { color: colors.accent, fontWeight: '600' },

@@ -8,11 +8,13 @@ export default function WorkerLayout() {
   return (
     <AppTabs
       tabs={[
-        { name: 'jobs', title: t('tabs.jobs'), icon: 'briefcase-outline' },
-        { name: 'applications', title: t('tabs.applications'), icon: 'paper-plane-outline' },
+        { name: 'matches', title: t('tabs.matches'), icon: 'sparkles-outline' },
+        { name: 'browse', title: t('tabs.browse'), icon: 'search-outline' },
+        { name: 'connections', title: t('tabs.connections'), icon: 'people-outline' },
         { name: 'profile', title: t('tabs.profile'), icon: 'person-outline' },
         { name: 'settings', title: t('tabs.settings'), icon: 'settings-outline' },
       ]}
+      hidden={['customers/[id]']}
     />
   );
 }

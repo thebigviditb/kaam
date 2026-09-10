@@ -8,12 +8,13 @@ export default function CustomerLayout() {
   return (
     <AppTabs
       tabs={[
-        { name: 'jobs', title: t('tabs.myJobs'), icon: 'list-outline' },
-        { name: 'post-job', title: t('tabs.postJob'), icon: 'add-circle-outline' },
-        { name: 'workers', title: t('tabs.workers'), icon: 'people-outline' },
+        { name: 'matches', title: t('tabs.matches'), icon: 'sparkles-outline' },
+        { name: 'browse', title: t('tabs.browse'), icon: 'search-outline' },
+        { name: 'connections', title: t('tabs.connections'), icon: 'people-outline' },
         { name: 'profile', title: t('tabs.profile'), icon: 'person-outline' },
         { name: 'settings', title: t('tabs.settings'), icon: 'settings-outline' },
       ]}
+      hidden={['workers/[id]']}
     />
   );
 }

@@ -34,8 +34,13 @@ export default function RootLayout() {
 }
 
 /**
- * Routing guard. Decides where the user belongs based on auth state and the
- * `GET /me` result, and redirects when the current route group does not match.
+ * Routing guard. Where a user belongs, in order:
+ *   signed out            → (auth)
+ *   no app user (404 /me) → (auth)/choose-role   (POST /me with role + phone)
+ *   not onboarded         → (onboarding)/<role>  (the questionnaire)
+ *   onboarded             → (worker) or (customer) tabs
+ * The onboarding group stays reachable once onboarded so the worker's optional
+ * media step can finish after the profile PUT flips `onboarded`.
  */
 function Gate() {
   const { status } = useAuth();
@@ -66,9 +71,16 @@ function Gate() {
       if (!(group === '(auth)' && leaf === 'choose-role')) router.replace('/(auth)/choose-role');
       return;
     }
-    const wanted = me.data.role === 'worker' ? '(worker)' : '(customer)';
-    if (group !== wanted) {
-      router.replace(me.data.role === 'worker' ? '/(worker)/jobs' : '/(customer)/jobs');
+    const role = me.data.role;
+    if (!me.data.onboarded) {
+      if (!(group === '(onboarding)' && leaf === role)) {
+        router.replace(role === 'worker' ? '/(onboarding)/worker' : '/(onboarding)/customer');
+      }
+      return;
+    }
+    const wanted = role === 'worker' ? '(worker)' : '(customer)';
+    if (group !== wanted && group !== '(onboarding)') {
+      router.replace(role === 'worker' ? '/(worker)/matches' : '/(customer)/matches');
     }
   }, [booting, status, me.isError, me.data, group, leaf, router]);
 

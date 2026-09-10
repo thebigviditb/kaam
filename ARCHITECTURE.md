@@ -1,9 +1,11 @@
 # Kaam — Architecture
 
 Kaam is a marketplace connecting domestic workers (cooks, cleaners, nannies, etc.)
-in the Bay Area with households that need help. Workers find work through the
-website now, and later by phoning a number and talking to a Hindi-speaking AI agent.
-Customers post job requests on the website.
+in the Bay Area with households that need help. Both sides answer a short onboarding
+questionnaire (what work, when, and for households, where and what pay), the app ranks
+matches, and either side can reach out. Once the other side accepts, phone numbers are
+shared. Later, workers will also be able to phone a number and talk to a Hindi-speaking
+AI agent that reads them their matches.
 
 ## 1. Repo layout (monorepo)
 
@@ -42,13 +44,18 @@ for audio streaming. Nothing in the web app has to change for that.
   `aws-amplify` Auth (works on web and native).
 - **Language:** i18n with English and Hindi. A **Settings** screen has a language
   picker; the choice is saved on the device and on the user record.
+- **Auth is passwordless.** Workers sign up and log in with a phone number and a
+  texted code. Households can use phone or email. No passwords anywhere.
 - **Screens (v1):**
-  - Sign up (pick Worker or Customer) / log in / verify email code
-  - Worker: profile (tags, experience, rate, city, bio, photos/videos), browse jobs
-    with filters (tags, city, pay, pay type), apply, my applications
-  - Customer: post job (tags + "Other", pay, description, city, schedule), my jobs
-    and their applicants (accept/reject), browse worker profiles with the same filters
-  - Settings: language, log out
+  - Welcome → pick Worker / Household → phone (or email) → code → registered
+  - **Onboarding wizard**, one question per screen:
+    - Household: name + city → what work (tags + Other) → when needed (asap / 2 weeks /
+      month / flexible) → which days + time of day → expected pay + description
+    - Worker: name + bio → what work → which days + time of day available →
+      experience + rate → optional photos/videos. Workers have no location.
+  - Tabs (both roles): **Matches** (ranked), **Browse** (filters), **Connections**
+    (received / sent / accepted, with phone once accepted), **Profile** (edit the
+    onboarding answers), **Settings**
 
 ## 4. Backend
 
@@ -68,12 +75,15 @@ for audio streaming. Nothing in the web app has to change for that.
 
 | Table            | Key fields |
 |------------------|-----------|
-| users            | id, cognito_sub, role (worker/customer), email, phone, preferred_language |
-| worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city, availability, is_visible |
-| customer_profiles| user_id, display_name, city |
-| jobs             | id, customer_id, title, tags[], other_tag_text, description, pay_amount, pay_type (hourly/daily/monthly/one_time), city, schedule, status (open/filled/closed) |
-| applications     | id, job_id, worker_id, message, status (pending/accepted/rejected) |
+| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language |
+| worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, days[], times[], is_visible |
+| customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
+| connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined); unique per pair |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
+
+**Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
+within_2_weeks, within_month, flexible. **Match score** = 10 × shared tags + 2 × shared
+days + shared time slots; zero shared tags means no match.
 
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
 dishes, ironing, childcare, elder_care, grocery, other.
@@ -83,19 +93,21 @@ dishes, ironing, childcare, elder_care, grocery, other.
 ### Endpoints (v1)
 
 ```
-GET  /me                    PUT /me            (role/phone/language on first login)
-GET/PUT /workers/me         GET /workers?tags=&city=&max_rate=     GET /workers/{id}
-POST /media/presign         POST /media        DELETE /media/{id}
-POST /jobs   GET /jobs?tags=&city=&min_pay=&pay_type=   GET /jobs/{id}   PATCH /jobs/{id}
-POST /jobs/{id}/apply       GET /jobs/{id}/applications   PATCH /applications/{id}
-GET  /applications/me       GET /jobs/matching  (jobs matching my worker tags/city)
+GET /meta                   GET /me   POST /me (role, phone, language)   PUT /me
+GET/PUT /workers/me         GET /workers?tags=&days=&times=&max_rate=&min_experience=&q=
+GET /workers/matching       GET /workers/{id}
+GET/PUT /customers/me       GET /customers?tags=&days=&times=&city=&min_pay=&pay_type=&start_timing=&q=
+GET /customers/matching     GET /customers/{id}      ← the voice agent's "what work is there for me?"
+POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
+POST /media/presign         POST /media              DELETE /media/{id}
 ```
 
 ## 5. Infrastructure (AWS CDK, Python)
 
 `KaamStack` deployed as `kaam-staging` and `kaam-prod` in us-west-2:
 
-- Cognito user pool (email sign-in, email verification, self sign-up) + app client
+- Cognito user pool (ESSENTIALS plan, passwordless: SMS OTP + email OTP, phone/email
+  sign-in aliases, self sign-up) + app client with the USER_AUTH flow
 - Private S3 bucket for media with CORS for browser uploads
 - IAM user with put/get on that bucket; its access key goes into Vercel env vars
 
@@ -125,8 +137,8 @@ Secrets needed in GitHub: `AWS_ROLE_ARN`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
 - Twilio phone number per environment. Incoming call → webhook to the API.
 - Caller ID looked up against `users.phone`. Unknown caller → agent offers to create
   a worker profile by voice.
-- Audio streaming → Hindi STT → Claude with tools (`find_jobs_for_me`, `get_job`,
-  `apply_to_job`, `update_my_availability`) → Hindi TTS. Candidates for Hindi
+- Audio streaming → Hindi STT → Claude with tools (`my_matches` = GET /customers/matching,
+  `reach_out` = POST /connections, `update_my_availability` = PUT /workers/me) → Hindi TTS. Candidates for Hindi
   STT/TTS: Sarvam AI, Google, ElevenLabs. A managed voice-agent platform (Vapi /
   Retell) is the fastest first version; it calls the same REST endpoints.
 - SMS via Twilio for "new job matches your profile" alerts.

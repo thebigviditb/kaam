@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import jobs, me, media, workers
+from app.routers import connections, me, media, profiles
 
 app = FastAPI(title="Kaam API", version="0.1.0")
 
@@ -22,6 +22,6 @@ def health():
 
 
 app.include_router(me.router)
-app.include_router(workers.router)
+app.include_router(profiles.router)
 app.include_router(media.router)
-app.include_router(jobs.router)
+app.include_router(connections.router)

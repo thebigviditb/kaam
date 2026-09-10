@@ -41,9 +41,11 @@ CITIES = [
     "Morgan Hill",
 ]
 
+DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+TIMES = ["morning", "afternoon", "evening"]
+START_TIMINGS = ["asap", "within_2_weeks", "within_month", "flexible"]
 PAY_TYPES = ["hourly", "daily", "monthly", "one_time"]
-JOB_STATUSES = ["open", "filled", "closed"]
-APPLICATION_STATUSES = ["pending", "accepted", "rejected"]
+CONNECTION_STATUSES = ["pending", "accepted", "declined"]
 ROLES = ["worker", "customer"]
 LANGUAGES = ["en", "hi"]
 MEDIA_KINDS = ["image", "video"]

@@ -9,6 +9,7 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import { confirm } from '@/components/notify';
 import { Button, Card, Divider, Screen, Section } from '@/components/ui';
 import { useI18n } from '@/i18n';
+import { displayPhone } from '@/lib/phone';
 import { spacing, text } from '@/theme';
 
 export function SettingsScreen() {
@@ -27,6 +28,7 @@ export function SettingsScreen() {
     router.replace('/(auth)/welcome');
   };
 
+  const email = me.data?.email ?? auth.email;
   return (
     <Screen title={t('settings.title')}>
       <Section title={t('common.language')}>
@@ -35,23 +37,23 @@ export function SettingsScreen() {
       <Section title={t('settings.account')}>
         <Card>
           <View style={s.row}>
-            <Text style={text.muted}>{t('common.email')}</Text>
-            <Text style={text.body}>{me.data?.email ?? auth.email ?? '—'}</Text>
+            <Text style={text.muted}>{t('common.phone')}</Text>
+            <Text style={text.body}>{me.data?.phone ? displayPhone(me.data.phone) : '—'}</Text>
           </View>
+          {email ? (
+            <>
+              <Divider />
+              <View style={s.row}>
+                <Text style={text.muted}>{t('common.email')}</Text>
+                <Text style={text.body}>{email}</Text>
+              </View>
+            </>
+          ) : null}
           <Divider />
           <View style={s.row}>
             <Text style={text.muted}>{t('settings.role')}</Text>
             <Text style={text.body}>{label('roles', me.data?.role)}</Text>
           </View>
-          {me.data?.phone ? (
-            <>
-              <Divider />
-              <View style={s.row}>
-                <Text style={text.muted}>{t('common.phone')}</Text>
-                <Text style={text.body}>{me.data.phone}</Text>
-              </View>
-            </>
-          ) : null}
         </Card>
       </Section>
       <Button title={t('settings.logOut')} variant="danger" onPress={logOut} style={{ marginTop: spacing.lg }} />

@@ -8,6 +8,7 @@ from constructs import Construct
 class GithubOidcStack(cdk.Stack):
     def __init__(self, scope: Construct, id: str, *, repo: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
+        owner, name = repo.split("/", 1)
 
         provider = iam.OpenIdConnectProvider(
             self,
@@ -26,7 +27,14 @@ class GithubOidcStack(cdk.Stack):
                     "StringEquals": {
                         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                     },
-                    "StringLike": {"token.actions.githubusercontent.com:sub": f"repo:{repo}:*"},
+                    # GitHub issues subs both as repo:owner/name:* and, newer, with
+                    # numeric ids: repo:owner@123/name@456:*. Accept either.
+                    "StringLike": {
+                        "token.actions.githubusercontent.com:sub": [
+                            f"repo:{repo}:*",
+                            f"repo:{owner}@*/{name}@*:*",
+                        ]
+                    },
                 },
             ),
             max_session_duration=cdk.Duration.hours(1),

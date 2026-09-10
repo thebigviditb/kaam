@@ -21,6 +21,41 @@ aws iam create-access-key --user-name kaam-staging-api
 aws iam create-access-key --user-name kaam-prod-api
 ```
 
+### SMS for passwordless login
+
+Cognito sends login codes by SMS through Amazon SNS. A new AWS account is in the **SNS
+SMS sandbox**: it only delivers to phone numbers you verify first. For staging that is
+fine — add each tester's number:
+
+```sh
+aws sns create-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --region us-west-2
+aws sns verify-sms-sandbox-phone-number --phone-number +1XXXXXXXXXX --one-time-password 123456 --region us-west-2
+```
+
+For production SMS we are using **Twilio** (one account for login codes now, and the
+voice/SMS agent later). Carrier rules are the same everywhere in the US: a toll-free number
+must pass toll-free verification (1–3 weeks) before it can text unverified numbers. The
+opt-in screenshot required for that form is `docs/assets/sms-opt-in.png`.
+
+Until verification completes, households can log in with email codes and workers can be
+tested with numbers verified in the Twilio console.
+
+Phone login uses a Cognito **custom auth challenge** (`infra/lambda/auth-challenge`): Twilio
+Verify sends and checks the code from Twilio's own registered numbers, so it works without
+any carrier registration. Create a Verify service in the Twilio console (or via API) and put
+the credentials in Secrets Manager once per environment:
+
+```sh
+aws secretsmanager put-secret-value --region us-west-2 --secret-id kaam/staging/twilio \
+  --secret-string '{"accountSid":"AC…","authToken":"…","verifyServiceSid":"VA…","fromNumber":"+1833…"}'
+```
+
+Deploys never touch the secret's value. The Lambdas cache it, so after changing it either
+wait for a cold start or touch the function configuration to restart them.
+
+While the Twilio account is on trial, Verify only delivers to numbers verified in the Twilio
+console (Phone Numbers → Verified Caller IDs). Upgrading the account removes that limit.
+
 ## 2. Neon (Postgres)
 
 One Neon project with two branches: `production` (prod) and `staging`. Each branch

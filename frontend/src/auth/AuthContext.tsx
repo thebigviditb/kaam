@@ -1,4 +1,6 @@
 import {
+  autoSignIn as amplifyAutoSignIn,
+  confirmSignIn as amplifyConfirmSignIn,
   confirmSignUp as amplifyConfirmSignUp,
   fetchAuthSession,
   resendSignUpCode as amplifyResend,
@@ -15,19 +17,73 @@ import { config } from '@/config';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
+/** How a user identifies themselves: an E.164 phone or an email. */
+export type Contact = { kind: 'phone' | 'email'; value: string };
+
+export type CodeChannel = 'sms' | 'email';
+
+export type SignUpResult =
+  /** (Email) A sign-up confirmation code was sent; call confirmSignUp next. */
+  | { step: 'confirmSignUp' }
+  /** (Phone) The account exists and a log-in code was sent; call confirmSignIn next. */
+  | { step: 'confirmSignIn'; channel: CodeChannel }
+  /** No confirmation needed and we are signed in. */
+  | { step: 'signedIn' };
+
 type Auth = {
   status: AuthStatus;
   email: string | null;
   devBypass: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
-  confirmSignUp: (email: string, code: string) => Promise<void>;
-  resendCode: (email: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  /**
+   * Passwordless sign-up. Email: creates the Cognito user and sends a confirmation code.
+   * Phone: creates the (auto-confirmed) user and immediately starts the log-in code flow;
+   * an already-registered phone is treated as "welcome back" and goes straight to log-in.
+   */
+  signUp: (contact: Contact) => Promise<SignUpResult>;
+  /** (Email) Confirms the sign-up code and completes the auto sign-in. */
+  confirmSignUp: (username: string, code: string) => Promise<void>;
+  /** (Email) Resends the sign-up confirmation code. */
+  resendSignUpCode: (username: string) => Promise<void>;
+  /**
+   * Passwordless log-in: asks Cognito to send an OTP. Returns the channel used.
+   * Calling it again for the same contact starts over and sends a fresh code.
+   */
+  signIn: (contact: Contact) => Promise<CodeChannel>;
+  /**
+   * Answers the OTP challenge. Throws Error('auth.wrongCode') when the code is wrong and
+   * another try is allowed, Error('auth.tooManyAttempts') when the session is spent.
+   */
+  confirmSignIn: (code: string) => Promise<void>;
   devSignIn: (id: string, email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<Auth | null>(null);
+
+/**
+ * Cognito still requires a password on sign-up even for OTP-only users. We generate a
+ * strong random one, never show it, and rely on OTP challenges for every later log-in.
+ */
+function randomPassword(): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%^&*';
+  const all = upper + lower + digits + symbols;
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const chars = Array.from(bytes, (b) => all[b % all.length]);
+  // Guarantee every class Cognito's default policy may require.
+  chars[0] = upper[bytes[0] % upper.length];
+  chars[1] = lower[bytes[1] % lower.length];
+  chars[2] = digits[bytes[2] % digits.length];
+  chars[3] = symbols[bytes[3] % symbols.length];
+  return chars.join('');
+}
+
+function errorName(e: unknown): string {
+  return e instanceof Error ? e.name : '';
+}
 
 async function readCognitoSession(): Promise<{ email: string | null } | null> {
   if (!amplifyConfigured) return null;
@@ -40,6 +96,40 @@ async function readCognitoSession(): Promise<{ email: string | null } | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Phone log-in: a Cognito CUSTOM_AUTH challenge whose Lambda triggers send and check the
+ * code through Twilio Verify (US carriers block Cognito's own SMS from unverified numbers).
+ * Every call starts a fresh challenge, i.e. sends a new code.
+ */
+async function startPhoneChallenge(phone: string): Promise<void> {
+  const result = await amplifySignIn({
+    username: phone,
+    options: { authFlowType: 'CUSTOM_WITHOUT_SRP' },
+  });
+  if (result.isSignedIn) return;
+  const step = result.nextStep.signInStep;
+  if (step !== 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE') throw new Error(`auth.step:${step}`);
+}
+
+/** Email log-in: USER_AUTH with the EMAIL_OTP factor. Resolves once the code has been sent. */
+async function startEmailChallenge(email: string): Promise<{ signedIn: boolean }> {
+  const result = await amplifySignIn({
+    username: email,
+    options: { authFlowType: 'USER_AUTH', preferredChallenge: 'EMAIL_OTP' },
+  });
+  if (result.isSignedIn) return { signedIn: true };
+  const step = result.nextStep.signInStep;
+  if (step === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE') return { signedIn: false };
+  if (step === 'CONTINUE_SIGN_IN_WITH_FIRST_FACTOR_SELECTION') {
+    // The pool did not honor preferredChallenge; pick the OTP factor explicitly.
+    const next = await amplifyConfirmSignIn({ challengeResponse: 'EMAIL_OTP' });
+    if (next.isSignedIn) return { signedIn: true };
+    if (next.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_EMAIL_CODE') return { signedIn: false };
+    throw new Error(`auth.step:${next.nextStep.signInStep}`);
+  }
+  throw new Error(`auth.step:${step}`);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -77,35 +167,118 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!amplifyConfigured) throw new Error('auth.notConfigured');
   };
 
-  const signUp = useCallback(async (e: string, password: string) => {
-    requireAmplify();
-    await amplifySignUp({
-      username: e.trim(),
-      password,
-      options: { userAttributes: { email: e.trim() } },
-    });
-  }, []);
-
-  const confirmSignUp = useCallback(async (e: string, code: string) => {
-    requireAmplify();
-    await amplifyConfirmSignUp({ username: e.trim(), confirmationCode: code.trim() });
-  }, []);
-
-  const resendCode = useCallback(async (e: string) => {
-    requireAmplify();
-    await amplifyResend({ username: e.trim() });
-  }, []);
-
-  const signIn = useCallback(async (e: string, password: string) => {
-    requireAmplify();
-    const result = await amplifySignIn({ username: e.trim(), password });
-    if (!result.isSignedIn) {
-      throw new Error(`Sign-in requires: ${result.nextStep.signInStep}`);
-    }
+  const markSignedIn = useCallback(async (fallbackEmail: string | null) => {
     const session = await readCognitoSession();
-    setEmail(session?.email ?? e.trim());
+    setEmail(session?.email ?? fallbackEmail);
     setStatus('signedIn');
   }, []);
+
+  const signUp = useCallback(
+    async (contact: Contact): Promise<SignUpResult> => {
+      requireAmplify();
+
+      if (contact.kind === 'phone') {
+        // A PreSignUp trigger auto-confirms phone users, so there is no confirmSignUp step.
+        // An existing phone simply means "welcome back": go straight to the log-in code.
+        try {
+          await amplifySignUp({
+            username: contact.value,
+            password: randomPassword(),
+            options: { userAttributes: { phone_number: contact.value } },
+          });
+        } catch (e) {
+          if (errorName(e) !== 'UsernameExistsException') throw e;
+        }
+        await startPhoneChallenge(contact.value);
+        return { step: 'confirmSignIn', channel: 'sms' };
+      }
+
+      const result = await amplifySignUp({
+        username: contact.value,
+        password: randomPassword(),
+        options: {
+          userAttributes: { email: contact.value },
+          autoSignIn: { authFlowType: 'USER_SRP_AUTH' },
+        },
+      });
+      if (result.isSignUpComplete && result.nextStep.signUpStep === 'COMPLETE_AUTO_SIGN_IN') {
+        await amplifyAutoSignIn();
+        await markSignedIn(contact.value);
+        return { step: 'signedIn' };
+      }
+      if (result.nextStep.signUpStep === 'CONFIRM_SIGN_UP') return { step: 'confirmSignUp' };
+      // Pool without confirmation: fall through to the OTP log-in flow.
+      const { signedIn } = await startEmailChallenge(contact.value);
+      if (signedIn) {
+        await markSignedIn(contact.value);
+        return { step: 'signedIn' };
+      }
+      return { step: 'confirmSignIn', channel: 'email' };
+    },
+    [markSignedIn],
+  );
+
+  const confirmSignUp = useCallback(
+    async (username: string, code: string) => {
+      requireAmplify();
+      const user = username.trim();
+      const result = await amplifyConfirmSignUp({ username: user, confirmationCode: code.trim() });
+      if (result.nextStep.signUpStep === 'COMPLETE_AUTO_SIGN_IN') {
+        const signedIn = await amplifyAutoSignIn();
+        if (signedIn.isSignedIn) {
+          await markSignedIn(user.includes('@') ? user : null);
+          return;
+        }
+      }
+      // Auto sign-in was not possible (e.g. page reload): fall back to an OTP log-in.
+      // Only email users reach this screen; phone users are auto-confirmed at sign-up.
+      const { signedIn } = await startEmailChallenge(user);
+      if (signedIn) await markSignedIn(user);
+      else throw new Error('auth.step:CONFIRM_SIGN_IN_WITH_EMAIL_CODE');
+    },
+    [markSignedIn],
+  );
+
+  const resendSignUpCode = useCallback(async (username: string) => {
+    requireAmplify();
+    await amplifyResend({ username: username.trim() });
+  }, []);
+
+  const signIn = useCallback(async (contact: Contact): Promise<CodeChannel> => {
+    requireAmplify();
+    if (contact.kind === 'phone') {
+      await startPhoneChallenge(contact.value);
+      return 'sms';
+    }
+    const { signedIn } = await startEmailChallenge(contact.value);
+    if (signedIn) throw new Error('auth.step:DONE');
+    return 'email';
+  }, []);
+
+  const confirmSignIn = useCallback(
+    async (code: string) => {
+      requireAmplify();
+      let result;
+      try {
+        result = await amplifyConfirmSignIn({ challengeResponse: code.trim() });
+      } catch (e) {
+        // The custom challenge fails the whole sign-in after 3 wrong answers (or an expired
+        // session); the user has to request a fresh code.
+        if (errorName(e) === 'NotAuthorizedException') throw new Error('auth.tooManyAttempts');
+        throw e;
+      }
+      if (result.isSignedIn) {
+        await markSignedIn(null);
+        return;
+      }
+      // A wrong Twilio code comes back as another round of the same custom challenge.
+      if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_CUSTOM_CHALLENGE') {
+        throw new Error('auth.wrongCode');
+      }
+      throw new Error(`auth.step:${result.nextStep.signInStep}`);
+    },
+    [markSignedIn],
+  );
 
   const devSignIn = useCallback(async (id: string, e: string) => {
     await tokenStore.set(makeDevToken(id, e));
@@ -133,12 +306,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       devBypass: config.authDevBypass,
       signUp,
       confirmSignUp,
-      resendCode,
+      resendSignUpCode,
       signIn,
+      confirmSignIn,
       devSignIn,
       signOut,
     }),
-    [status, email, signUp, confirmSignUp, resendCode, signIn, devSignIn, signOut],
+    [status, email, signUp, confirmSignUp, resendSignUpCode, signIn, confirmSignIn, devSignIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -148,4 +322,15 @@ export function useAuth(): Auth {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
+}
+
+/** Map Amplify/Cognito errors to i18n keys where we have a friendlier message. */
+export function authErrorKey(e: unknown): string | null {
+  const name = errorName(e);
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg === 'auth.notConfigured' || msg === 'auth.wrongCode' || msg === 'auth.tooManyAttempts') return msg;
+  if (name === 'UsernameExistsException') return 'auth.userExists';
+  if (name === 'UserNotFoundException') return 'auth.userNotFound';
+  if (name === 'CodeMismatchException' || name === 'ExpiredCodeException') return 'auth.wrongCode';
+  return null;
 }

@@ -8,6 +8,8 @@ export type TabDef = {
   name: string;
   title: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
+  /** Unread count shown on the tab icon; hidden when 0. */
+  badge?: number;
 };
 
 /** `hidden` routes live inside the tab navigator (detail screens) but get no tab button. */
@@ -29,6 +31,8 @@ export function AppTabs({ tabs, hidden = [] }: { tabs: TabDef[]; hidden?: string
           options={{
             title: tab.title,
             tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color} />,
+            tabBarBadge: tab.badge ? (tab.badge > 99 ? '99+' : tab.badge) : undefined,
+            tabBarBadgeStyle: { backgroundColor: colors.accent, color: colors.accentText, fontSize: 11 },
           }}
         />
       ))}

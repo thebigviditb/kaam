@@ -40,6 +40,7 @@ function CognitoLogin() {
     const key = authErrorKey(e);
     const m = errorMessage(e);
     if (key) return setError(t(key as StringKey));
+    if (m === 'auth.emailCodeUnavailable') return setError(t('auth.emailCodeUnavailable'));
     if (m.startsWith('auth.step:')) return setError(t('auth.unexpectedStep', { step: m.slice('auth.step:'.length) }));
     setError(m);
   };

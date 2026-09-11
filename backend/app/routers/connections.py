@@ -1,16 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Connection, CustomerProfile, User, WorkerProfile
+from app.models import Connection, CustomerProfile, Message, User, WorkerProfile, now
 from app.routers.profiles import connection_between, customer_out, worker_out
-from app.schemas import ConnectionCreate, ConnectionDecision, ConnectionOut
+from app.schemas import (
+    ChatMessage,
+    ChatMessageIn,
+    ConnectionCreate,
+    ConnectionDecision,
+    ConnectionOut,
+)
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 
 
-def _out(c: Connection, viewer: User) -> ConnectionOut:
+def _my_last_read(c: Connection, viewer: User):
+    return c.worker_last_read_at if viewer.id == c.worker_id else c.customer_last_read_at
+
+
+def _out(c: Connection, viewer: User, db: Session | None = None) -> ConnectionOut:
     out = ConnectionOut(
         id=c.id,
         customer_id=c.customer_id,
@@ -20,6 +31,21 @@ def _out(c: Connection, viewer: User) -> ConnectionOut:
         status=c.status,
         created_at=c.created_at,
     )
+    if db is not None and c.status == "accepted":
+        last = (
+            db.query(Message)
+            .filter(Message.connection_id == c.id)
+            .order_by(Message.created_at.desc())
+            .first()
+        )
+        out.last_message = ChatMessage.model_validate(last) if last else None
+        unread = db.query(func.count(Message.id)).filter(
+            Message.connection_id == c.id, Message.sender_id != viewer.id
+        )
+        last_read = _my_last_read(c, viewer)
+        if last_read is not None:
+            unread = unread.filter(Message.created_at > last_read)
+        out.unread_count = unread.scalar() or 0
     if c.worker.worker_profile is not None:
         out.worker = worker_out(c.worker.worker_profile, viewer, c)
     if c.customer.customer_profile is not None:
@@ -76,7 +102,7 @@ def create(
 def mine(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     col = Connection.worker_id if user.role == "worker" else Connection.customer_id
     rows = _load(db).filter(col == user.id).order_by(Connection.updated_at.desc()).all()
-    return [_out(c, user) for c in rows]
+    return [_out(c, user, db) for c in rows]
 
 
 @router.patch("/{connection_id}", response_model=ConnectionOut)
@@ -95,7 +121,7 @@ def decide(
     c.status = body.status
     db.commit()
     db.refresh(c)
-    return _out(c, user)
+    return _out(c, user, db)
 
 
 @router.delete("/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -106,4 +132,68 @@ def withdraw(
     if c is None or user.id not in (c.worker_id, c.customer_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "connection not found")
     db.delete(c)
+    db.commit()
+
+
+# ---- chat ----
+
+
+def _chat_connection(db: Session, connection_id: str, user: User) -> Connection:
+    c = db.get(Connection, connection_id)
+    if c is None or user.id not in (c.worker_id, c.customer_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "connection not found")
+    if c.status != "accepted":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "chat opens once the request is accepted")
+    return c
+
+
+@router.get("/{connection_id}/messages", response_model=list[ChatMessage])
+def list_messages(
+    connection_id: str,
+    after: str | None = None,
+    limit: int = Query(default=100, le=500),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    c = _chat_connection(db, connection_id, user)
+    q = db.query(Message).filter(Message.connection_id == c.id)
+    if after:
+        anchor = db.get(Message, after)
+        if anchor is not None and anchor.connection_id == c.id:
+            q = q.filter(Message.created_at > anchor.created_at)
+    return q.order_by(Message.created_at.asc()).limit(limit).all()
+
+
+@router.post(
+    "/{connection_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED
+)
+def send_message(
+    connection_id: str,
+    body: ChatMessageIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    c = _chat_connection(db, connection_id, user)
+    m = Message(connection_id=c.id, sender_id=user.id, body=body.body.strip())
+    c.updated_at = now()
+    # Sending implies you've seen everything so far.
+    if user.id == c.worker_id:
+        c.worker_last_read_at = m.created_at or now()
+    else:
+        c.customer_last_read_at = m.created_at or now()
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return m
+
+
+@router.post("/{connection_id}/read", status_code=status.HTTP_204_NO_CONTENT)
+def mark_read(
+    connection_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    c = _chat_connection(db, connection_id, user)
+    if user.id == c.worker_id:
+        c.worker_last_read_at = now()
+    else:
+        c.customer_last_read_at = now()
     db.commit()

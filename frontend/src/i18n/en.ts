@@ -79,6 +79,7 @@ export const en = {
     'auth.tooManyAttempts': 'Too many wrong attempts. Request a new code.',
     'auth.userExists': 'An account with this number or email already exists. Log in instead.',
     'auth.userNotFound': 'No account found. Sign up first.',
+    'auth.emailCodeUnavailable': 'This account signs in with its phone number. Enter your phone number to get a code.',
     'auth.unexpectedStep': 'Unexpected sign-in step: {step}',
     'auth.haveAccount': 'Already have an account?',
     'auth.noAccount': "Don't have an account?",
@@ -111,6 +112,7 @@ export const en = {
     'onb.payInvalid': 'Enter a valid amount',
     'onb.rateInvalid': 'Enter a valid rate',
     'onb.yearsInvalid': 'Enter a number between 0 and 60',
+    'onb.workCitiesRequired': 'Choose at least one city',
 
     'onb.c.nameTitle': 'Tell us about your household',
     'onb.c.name': 'Your name or family name',
@@ -127,6 +129,8 @@ export const en = {
     'onb.c.description': 'Anything else workers should know?',
     'onb.c.descPlaceholder': 'e.g. Vegetarian cooking for four, two dogs at home…',
     'onb.c.finish': 'Find workers',
+    'onb.c.mediaTitle': 'Photos of the work',
+    'onb.c.mediaHint': 'Show helpers what needs doing — the kitchen, the rooms, etc. You can skip this and add them later.',
 
     'onb.w.nameTitle': 'Tell us about yourself',
     'onb.w.name': 'Your name',
@@ -135,6 +139,10 @@ export const en = {
     'onb.w.bioPlaceholder': 'e.g. 10 years cooking North Indian food for families in Fremont.',
     'onb.w.tagsTitle': 'What work do you do?',
     'onb.w.tagsHint': 'Pick everything you can do.',
+    'onb.w.cityTitle': 'Where are you based?',
+    'onb.w.city': 'Home city',
+    'onb.w.workCities': 'Which cities can you work in?',
+    'onb.w.workCitiesHint': 'Households in these cities will see your profile.',
     'onb.w.availTitle': 'When are you available?',
     'onb.w.expTitle': 'Your experience and rate',
     'onb.w.years': 'Years of experience',
@@ -153,8 +161,11 @@ export const en = {
     'matches.workerHint': 'Ranked by how well they match your skills and availability.',
     'matches.customerTitle': 'Workers for you',
     'matches.customerHint': 'Ranked by how well they match what you need.',
-    'matches.emptyWorker': 'No matching households yet. Check back soon, or browse all households.',
-    'matches.emptyCustomer': 'No matching workers yet. Check back soon, or browse all workers.',
+    'matches.emptyWorker': 'No matching households yet. Check back soon, or add more cities in Profile.',
+    'matches.workerBasis': 'Based on your profile: {tags}, {cities}.',
+    'matches.customerBasis': 'Looking for: {tags} in {city}, {times}.',
+    'matches.editProfile': 'Edit in Profile',
+    'matches.emptyCustomer': 'No matching helpers yet. Check back soon, or widen what you need in your Profile.',
 
     'browse.workerTitle': 'Browse households',
     'browse.customerTitle': 'Browse workers',
@@ -171,6 +182,8 @@ export const en = {
     'card.pay': 'Pay',
     'card.start': 'Start',
     'card.rate': 'Rate',
+    'card.basedIn': 'Based in {city}',
+    'card.worksIn': 'Works in {cities}',
 
     'detail.customerNotFound': 'Household not found',
     'detail.workerNotFound': 'Worker not found',
@@ -182,7 +195,7 @@ export const en = {
     'detail.experience': 'Experience',
 
     'conn.title': 'Connections',
-    'conn.empty': 'No connections yet. Reach out from Matches or Browse.',
+    'conn.empty': 'No connections yet. Reach out from Matches.',
     'conn.received': 'Requests for you',
     'conn.sent': 'Requests you sent',
     'conn.accepted': 'Connected',
@@ -205,6 +218,30 @@ export const en = {
     'conn.yourMessage': 'Your message',
     'conn.confirmWithdraw': 'Withdraw this request?',
     'conn.confirmDecline': 'Decline this request?',
+    'conn.chats': 'Chats',
+    'conn.openChat': 'Open chat',
+    'conn.noMessagesYet': 'No messages yet',
+    'conn.you': 'You',
+
+    'chat.title': 'Chat',
+    'chat.empty': "You're connected with {name}. Say hello!",
+    'chat.placeholder': 'Type a message…',
+    'chat.send': 'Send',
+    'chat.viewProfile': 'View profile',
+    'chat.report': 'Report {name}',
+    'chat.notAccepted': 'You can chat once you are both connected.',
+    'chat.notFound': 'Chat not found',
+    'chat.sendFailed': 'Could not send. Try again.',
+    'chat.today': 'Today',
+    'chat.yesterday': 'Yesterday',
+    'chat.justNow': 'Just now',
+    'chat.minutesAgo': '{n}m',
+    'chat.hoursAgo': '{n}h',
+    'chat.daysAgo': '{n}d',
+
+    'matches.welcomeCustomer': 'These helpers match what you told us. Tap one to learn more.',
+    'matches.welcomeWorker': 'These households match your skills and availability. Tap one to learn more.',
+    'matches.dismiss': 'Got it',
 
     'profile.title': 'My profile',
     'profile.workerIntro': 'Households see this when they look for workers.',
@@ -214,14 +251,27 @@ export const en = {
     'profile.saved': 'Profile saved',
     'profile.media': 'Photos and videos',
     'profile.mediaHint': 'Up to {n} items. Images up to 10 MB, videos up to 100 MB.',
-    'profile.addPhoto': 'Add photo',
-    'profile.addVideo': 'Add video',
+    'profile.addMedia': 'Add photos or videos',
+    'profile.workMedia': 'Photos of the work',
+    'profile.workMediaHint': 'Show helpers what needs doing — the kitchen, the rooms, etc.',
     'profile.uploading': 'Uploading…',
     'profile.uploadFailed': 'Upload failed',
     'profile.tooLarge': 'File is too large',
     'profile.unsupportedType': 'Unsupported file type',
     'profile.mediaLimit': 'You have reached the media limit',
     'profile.deleteMedia': 'Delete this item?',
+
+    'report.title': 'Report {name}',
+    'report.link': 'Report this profile',
+    'report.reason': 'Reason',
+    'report.reasonPlaceholder': 'Choose a reason',
+    'report.description': 'Details',
+    'report.descPlaceholder': 'Tell us what happened…',
+    'report.hint': 'Reports are private. The person will not be notified.',
+    'report.submit': 'Submit',
+    'report.reasonRequired': 'Choose a reason',
+    'report.descRequired': 'Please describe what happened',
+    'report.success': "Thanks — we'll look into it.",
 
     'settings.title': 'Settings',
     'settings.account': 'Account',
@@ -280,6 +330,14 @@ export const en = {
     image: 'Photo',
     video: 'Video',
   },
+  reportReasons: {
+    inappropriate_behavior: 'Inappropriate behavior',
+    harassment: 'Harassment',
+    scam_or_fraud: 'Scam or fraud',
+    no_show: 'Did not show up',
+    fake_profile: 'Fake profile',
+    other: 'Other',
+  },
 };
 
 export type StringKey = keyof typeof en.strings;
@@ -293,4 +351,5 @@ export type Table = {
   connectionStatus: Record<string, string>;
   roles: Record<string, string>;
   mediaKinds: Record<string, string>;
+  reportReasons: Record<string, string>;
 };

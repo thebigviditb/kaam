@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import connections, me, media, profiles
+from app.routers import connections, me, media, profiles, reports
 
 app = FastAPI(title="Kaam API", version="0.1.0")
 
@@ -25,3 +25,4 @@ app.include_router(me.router)
 app.include_router(profiles.router)
 app.include_router(media.router)
 app.include_router(connections.router)
+app.include_router(reports.router)

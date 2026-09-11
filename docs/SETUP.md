@@ -4,11 +4,15 @@ Everything below is done once. After that, pushing to `staging` or `main` deploy
 
 ## 1. AWS (Cognito + S3) — `cdk deploy`
 
-From `infra/` with your AWS CLI logged in (region us-west-2):
+Kaam lives in AWS account **003018976921** (Vidit's own account, the `intension` CLI profile).
+Use that profile for everything below; the `default` profile on this Mac is a different
+company's account.
+
+From `infra/` (region us-west-2):
 
 ```sh
 cd infra && uv sync
-npx -y aws-cdk@latest deploy kaam-github kaam-staging kaam-prod --require-approval never --outputs-file cdk.outputs.json
+AWS_PROFILE=intension npx -y aws-cdk@latest deploy kaam-github kaam-staging kaam-prod --require-approval never --outputs-file cdk.outputs.json
 ```
 
 `cdk.outputs.json` now holds, per environment: `UserPoolId`, `UserPoolClientId`,
@@ -55,6 +59,15 @@ wait for a cold start or touch the function configuration to restart them.
 
 While the Twilio account is on trial, Verify only delivers to numbers verified in the Twilio
 console (Phone Numbers → Verified Caller IDs). Upgrading the account removes that limit.
+
+### Email codes (SES)
+
+Cognito only sends login-code emails through Amazon SES, and Gmail discards SES mail that
+claims to be "from" a gmail.com address. The pools therefore send as
+`Kaam <vidit@intensionapp.com>`; `intensionapp.com` (DNS at GoDaddy) is verified in SES
+us-west-2 with three DKIM CNAME records. SES production access for the account was requested
+on 2026-09-10 (`aws sesv2 get-account`); while in the sandbox, recipients must be verified
+identities too.
 
 ## 2. Neon (Postgres)
 

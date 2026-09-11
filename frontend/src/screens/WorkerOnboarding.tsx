@@ -7,15 +7,17 @@ import { errorMessage } from '@/api/client';
 import { keys, useMeta, useUpsertWorkerProfile } from '@/api/hooks';
 import { DAYS, TIMES, type User } from '@/api/types';
 import { ChipGroup } from '@/components/Chip';
+import { Select } from '@/components/Select';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading, Row } from '@/components/ui';
 import { WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
+import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
 
-const TOTAL = 5;
+const TOTAL = 6;
 
-/** The worker's profile, one question per screen. PUT /workers/me happens at step 4; step 5 is optional media. */
+/** The worker's profile, one question per screen. PUT /workers/me happens at step 5; step 6 is optional media. */
 export function WorkerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
@@ -28,6 +30,8 @@ export function WorkerOnboarding() {
   const [bio, setBio] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [otherText, setOtherText] = useState('');
+  const [city, setCity] = useState<string | null>(null);
+  const [workCities, setWorkCities] = useState<string[]>([]);
   const [days, setDays] = useState<string[]>([]);
   const [times, setTimes] = useState<string[]>([]);
   const [years, setYears] = useState('');
@@ -40,7 +44,7 @@ export function WorkerOnboarding() {
     setError(null);
     setStep((s) => s + 1);
   };
-  const back = step > 1 && step < 5 ? () => setStep((s) => s - 1) : undefined;
+  const back = step > 1 && step < TOTAL ? () => setStep((s) => s - 1) : undefined;
 
   const save = async () => {
     const yrs = years.trim() ? Number(years) : 0;
@@ -52,6 +56,8 @@ export function WorkerOnboarding() {
       await upsert.mutateAsync({
         display_name: name.trim(),
         bio: bio.trim(),
+        city: city as string,
+        work_cities: workCities,
         tags,
         other_tag_text: tags.includes('other') ? otherText.trim() : null,
         years_experience: yrs,
@@ -67,7 +73,10 @@ export function WorkerOnboarding() {
     }
   };
 
-  const finish = () => router.replace('/(worker)/matches');
+  const finish = async () => {
+    await queueMatchesWelcome();
+    router.replace('/(worker)/matches');
+  };
 
   switch (step) {
     case 1:
@@ -119,6 +128,35 @@ export function WorkerOnboarding() {
         <WizardStep
           step={3}
           total={TOTAL}
+          title={t('onb.w.cityTitle')}
+          error={error}
+          onBack={back}
+          onNext={() => {
+            if (!city) return setError(t('onb.cityRequired'));
+            if (workCities.length === 0) return setError(t('onb.workCitiesRequired'));
+            next();
+          }}>
+          <Field label={t('onb.w.city')}>
+            <Select
+              value={city}
+              options={meta.data.cities}
+              onChange={(c) => {
+                setCity(c);
+                if (c && !workCities.includes(c)) setWorkCities((w) => [...w, c]);
+              }}
+              placeholder={t('common.city')}
+            />
+          </Field>
+          <Field label={t('onb.w.workCities')} hint={t('onb.w.workCitiesHint')}>
+            <ChipGroup options={meta.data.cities} value={workCities} onChange={setWorkCities} labelFor={(v) => v} />
+          </Field>
+        </WizardStep>
+      );
+    case 4:
+      return (
+        <WizardStep
+          step={4}
+          total={TOTAL}
           title={t('onb.w.availTitle')}
           error={error}
           onBack={back}
@@ -135,10 +173,10 @@ export function WorkerOnboarding() {
           </Field>
         </WizardStep>
       );
-    case 4:
+    case 5:
       return (
         <WizardStep
-          step={4}
+          step={5}
           total={TOTAL}
           title={t('onb.w.expTitle')}
           error={error}
@@ -162,7 +200,7 @@ export function WorkerOnboarding() {
     default:
       return (
         <WizardStep
-          step={5}
+          step={6}
           total={TOTAL}
           title={t('onb.w.mediaTitle')}
           hint={t('onb.w.mediaHint')}

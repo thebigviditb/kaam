@@ -1,12 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { isApiError } from '@/api/client';
 import { useCustomer, useWorker } from '@/api/hooks';
 import { Back } from '@/components/Back';
-import { formatPay, formatSchedule, MatchScore, TagRow } from '@/components/cards';
+import { formatCities, formatPay, formatSchedule, MatchScore, TagRow } from '@/components/cards';
 import { MediaGallery } from '@/components/MediaGallery';
+import { ReportLink, ReportModal } from '@/components/ReportModal';
 import { Card, ErrorView, Loading, Screen, Section } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { ConnectionPanel } from '@/screens/ConnectionPanel';
@@ -17,6 +18,7 @@ export function CustomerDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, label } = useI18n();
   const q = useCustomer(id);
+  const [reporting, setReporting] = useState(false);
 
   return (
     <Screen>
@@ -58,6 +60,17 @@ export function CustomerDetail() {
             connection={q.data.connection}
             phone={q.data.phone}
           />
+          <Section title={t('profile.workMedia')}>
+            <MediaGallery items={q.data.media ?? []} emptyMessage={t('detail.noMedia')} />
+          </Section>
+          <ReportLink onPress={() => setReporting(true)} />
+          <ReportModal
+            visible={reporting}
+            onClose={() => setReporting(false)}
+            reportedUserId={q.data.user_id}
+            reportedName={q.data.display_name}
+            connectionId={q.data.connection?.id}
+          />
         </>
       )}
     </Screen>
@@ -69,6 +82,7 @@ export function WorkerDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, label } = useI18n();
   const q = useWorker(id);
+  const [reporting, setReporting] = useState(false);
 
   return (
     <Screen>
@@ -84,6 +98,7 @@ export function WorkerDetail() {
             {t('common.yearsExperience', { n: q.data.years_experience })}
             {q.data.hourly_rate != null ? ` · ${t('common.perHour', { n: q.data.hourly_rate })}` : ''}
           </Text>
+          <Text style={[text.muted, { marginTop: 2 }]}>{formatCities(q.data.city, q.data.work_cities ?? [], t)}</Text>
           <MatchScore score={q.data.match_score} />
           <View style={{ marginTop: spacing.md }}>
             <TagRow tags={q.data.tags} otherText={q.data.other_tag_text} />
@@ -106,6 +121,14 @@ export function WorkerDetail() {
           <Section title={t('detail.gallery')}>
             <MediaGallery items={q.data.media} emptyMessage={t('detail.noMedia')} />
           </Section>
+          <ReportLink onPress={() => setReporting(true)} />
+          <ReportModal
+            visible={reporting}
+            onClose={() => setReporting(false)}
+            reportedUserId={q.data.user_id}
+            reportedName={q.data.display_name}
+            connectionId={q.data.connection?.id}
+          />
         </>
       )}
     </Screen>

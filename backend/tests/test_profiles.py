@@ -130,3 +130,32 @@ def test_hidden_profiles(client, worker, customer):
     client.put("/customers/me", json={**CUSTOMER_PROFILE, "is_active": False}, headers=CUSTOMER)
     assert client.get("/customers", headers=WORKER).json() == []
     assert client.get("/customers/matching", headers=WORKER).json() == []
+
+
+def test_city_coverage_drives_matching(client, worker, customer):
+    # Household in Fremont is covered (worker works in Fremont/Newark)
+    assert len(client.get("/customers/matching", headers=WORKER).json()) == 1
+    # Move the household to Oakland: no longer covered
+    client.put("/customers/me", json={**CUSTOMER_PROFILE, "city": "Oakland"}, headers=CUSTOMER)
+    assert client.get("/customers/matching", headers=WORKER).json() == []
+    assert client.get("/workers/matching", headers=CUSTOMER).json() == []
+    # /workers?city= filters by work cities
+    assert len(client.get("/workers?city=Newark", headers=CUSTOMER).json()) == 1
+    assert len(client.get("/workers?city=Oakland", headers=CUSTOMER).json()) == 0
+
+
+def test_worker_city_validation(client, worker):
+    assert (
+        client.put(
+            "/workers/me", json={**WORKER_PROFILE, "work_cities": []}, headers=WORKER
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/workers/me", json={**WORKER_PROFILE, "work_cities": ["Delhi"]}, headers=WORKER
+        ).status_code
+        == 422
+    )
+    r = client.get("/workers/me", headers=WORKER).json()
+    assert r["city"] == "Fremont" and r["work_cities"] == ["Fremont", "Newark"]

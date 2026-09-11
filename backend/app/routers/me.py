@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import Claims, get_claims
 from app.config import Settings, get_settings
-from app.constants import CITIES, DAYS, PAY_TYPES, START_TIMINGS, TAGS, TIMES
+from app.constants import CITIES, DAYS, PAY_TYPES, REPORT_REASONS, START_TIMINGS, TAGS, TIMES
 from app.db import get_db
 from app.deps import get_current_user
 from app.models import User
@@ -31,6 +31,7 @@ def meta():
         days=DAYS,
         times=TIMES,
         start_timings=START_TIMINGS,
+        report_reasons=REPORT_REASONS,
     )
 
 

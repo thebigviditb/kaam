@@ -71,6 +71,13 @@ class KaamStack(cdk.Stack):
                 phone_number=cognito.StandardAttribute(required=False, mutable=True),
             ),
             sms_role_external_id=f"kaam-{env_name}-sms",
+            # One-time-code emails require SES. Sender is on intensionapp.com (Vidit's
+            # domain, DKIM-verified in SES us-west-2); Gmail rejects SES mail "from" gmail.com.
+            email=cognito.UserPoolEmail.with_ses(
+                from_email="vidit@intensionapp.com",
+                from_name="Kaam",
+                ses_region="us-west-2",
+            ),
             lambda_triggers=cognito.UserPoolTriggers(
                 pre_sign_up=pre_sign_up,
                 define_auth_challenge=define_auth,

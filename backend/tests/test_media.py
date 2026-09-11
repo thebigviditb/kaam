@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from conftest import WORKER
+from conftest import CUSTOMER, WORKER
 
 
 def test_presign_validates(client, worker):
@@ -55,3 +55,22 @@ def test_presign_register_delete(client, worker):
         assert client.delete(f"/media/{media_id}", headers=WORKER).status_code == 204
         delete_object.assert_called_once_with(key)
         assert client.get("/media", headers=WORKER).json() == []
+
+
+def test_customer_media_shows_on_profile(client, worker, customer):
+    with patch("app.storage.presign_put", return_value="https://s3/put"):
+        key = client.post(
+            "/media/presign",
+            json={"kind": "image", "content_type": "image/jpeg", "size_bytes": 10},
+            headers=CUSTOMER,
+        ).json()["s3_key"]
+        assert (
+            client.post(
+                "/media",
+                json={"kind": "image", "s3_key": key, "content_type": "image/jpeg"},
+                headers=CUSTOMER,
+            ).status_code
+            == 201
+        )
+    assert len(client.get("/customers/me", headers=CUSTOMER).json()["media"]) == 1
+    assert len(client.get("/customers/matching", headers=WORKER).json()[0]["media"]) == 1

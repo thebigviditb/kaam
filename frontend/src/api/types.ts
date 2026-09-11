@@ -78,6 +78,10 @@ export type ConnectionSummary = {
 export type WorkerProfileIn = {
   display_name: string;
   bio: string;
+  /** Home city (one of /meta.cities). */
+  city: string;
+  /** Cities the worker is willing to work in (min 1, each from /meta.cities). */
+  work_cities: string[];
   tags: string[];
   other_tag_text: string | null;
   years_experience: number;
@@ -115,6 +119,7 @@ export type CustomerProfileIn = {
 export type CustomerProfile = CustomerProfileIn & {
   user_id: string;
   updated_at: string;
+  media: Media[];
   phone: string | null;
   connection: ConnectionSummary | null;
   match_score: number;
@@ -130,6 +135,13 @@ export type ConnectionCreate = {
 
 export type ConnectionDecision = { status: 'accepted' | 'declined' };
 
+export type LastMessage = {
+  id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
 export type Connection = {
   id: string;
   customer_id: string;
@@ -140,7 +152,51 @@ export type Connection = {
   created_at: string;
   worker: WorkerProfile | null;
   customer: CustomerProfile | null;
+  last_message: LastMessage | null;
+  unread_count: number;
 };
+
+// ---- chat ----
+
+export type ChatMessage = {
+  id: string;
+  connection_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type ChatMessageCreate = { body: string };
+
+// ---- reports ----
+
+export type ReportReason =
+  | 'inappropriate_behavior'
+  | 'harassment'
+  | 'scam_or_fraud'
+  | 'no_show'
+  | 'fake_profile'
+  | 'other';
+
+/** Fallback order when /meta has not loaded; the server's `report_reasons` wins. */
+export const REPORT_REASONS: ReportReason[] = [
+  'inappropriate_behavior',
+  'harassment',
+  'scam_or_fraud',
+  'no_show',
+  'fake_profile',
+  'other',
+];
+
+export type ReportCreate = {
+  reported_user_id: string;
+  connection_id?: string;
+  reason: ReportReason;
+  /** Max 2000 chars; required when reason is 'other'. */
+  description?: string;
+};
+
+export type ReportOut = { id: string; created_at: string };
 
 export type Meta = {
   tags: string[];
@@ -149,12 +205,15 @@ export type Meta = {
   days: Day[];
   times: TimeOfDay[];
   start_timings: StartTiming[];
+  report_reasons: ReportReason[];
 };
 
 // ---- list filters (query strings) ----
 
 export type WorkerFilters = {
   tags?: string[];
+  /** Workers willing to work in this city (matches `work_cities`). */
+  city?: string;
   days?: string[];
   times?: string[];
   max_rate?: number;

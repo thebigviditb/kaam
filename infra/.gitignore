@@ -3,5 +3,5 @@ __pycache__/
 cdk.out/
 .pytest_cache/
 .ruff_cache/
-cdk.outputs.json
+cdk.outputs*.json
 node_modules/

@@ -163,8 +163,9 @@ export const en = {
     'matches.customerHint': 'Ranked by how well they match what you need.',
     'matches.emptyWorker': 'No matching households yet. Check back soon, or add more cities in Profile.',
     'matches.workerBasis': 'Based on your profile: {tags}, {cities}.',
+    'matches.customerBasis': 'Looking for: {tags} in {city}, {times}.',
     'matches.editProfile': 'Edit in Profile',
-    'matches.emptyCustomer': 'No matching workers yet. Check back soon, or browse all workers.',
+    'matches.emptyCustomer': 'No matching helpers yet. Check back soon, or widen what you need in your Profile.',
 
     'browse.workerTitle': 'Browse households',
     'browse.customerTitle': 'Browse workers',
@@ -194,7 +195,7 @@ export const en = {
     'detail.experience': 'Experience',
 
     'conn.title': 'Connections',
-    'conn.empty': 'No connections yet. Reach out from Matches or Browse.',
+    'conn.empty': 'No connections yet. Reach out from Matches.',
     'conn.received': 'Requests for you',
     'conn.sent': 'Requests you sent',
     'conn.accepted': 'Connected',

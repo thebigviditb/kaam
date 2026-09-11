@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useMatchingCustomers, useMatchingWorkers, useMyWorkerProfile } from '@/api/hooks';
+import { useMatchingCustomers, useMatchingWorkers, useMyCustomerProfile, useMyWorkerProfile } from '@/api/hooks';
 import { CustomerCard, WorkerCard } from '@/components/cards';
 import { EmptyState, ErrorView, Loading, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -64,6 +64,28 @@ function ProfileBasis() {
   );
 }
 
+/** "Looking for: cooking, dishes in Fremont, mornings. Edit in Profile." */
+function CustomerProfileBasis() {
+  const { t, label } = useI18n();
+  const router = useRouter();
+  const profile = useMyCustomerProfile();
+  const p = profile.data;
+  if (!p) return null;
+  const tags = p.tags.map((x) => (x === 'other' && p.other_tag_text ? p.other_tag_text : label('tags', x))).join(', ');
+  const times = (p.times ?? []).map((x) => label('times', x)).join(', ');
+  return (
+    <Text style={[text.muted, s.basis]}>
+      {t('matches.customerBasis', { tags, city: p.city, times })}{' '}
+      <Text
+        style={s.basisLink}
+        accessibilityRole="link"
+        onPress={() => router.push('/(customer)/profile')}>
+        {t('matches.editProfile')}
+      </Text>
+    </Text>
+  );
+}
+
 /** Worker's Matches tab (their feed): households ranked by fit. */
 export function WorkerMatches() {
   const { t } = useI18n();
@@ -100,6 +122,7 @@ export function CustomerMatches() {
   const q = useMatchingWorkers();
   return (
     <Screen title={t('matches.customerTitle')} subtitle={t('matches.customerHint')}>
+      <CustomerProfileBasis />
       <WelcomeBanner message={t('matches.welcomeCustomer')} />
       {q.isPending ? (
         <Loading />

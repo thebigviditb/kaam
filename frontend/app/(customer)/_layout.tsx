@@ -11,7 +11,6 @@ export default function CustomerLayout() {
     <AppTabs
       tabs={[
         { name: 'matches', title: t('tabs.matches'), icon: 'sparkles-outline' },
-        { name: 'browse', title: t('tabs.browse'), icon: 'search-outline' },
         { name: 'connections', title: t('tabs.connections'), icon: 'people-outline', badge: unread },
         { name: 'profile', title: t('tabs.profile'), icon: 'person-outline' },
         { name: 'settings', title: t('tabs.settings'), icon: 'settings-outline' },

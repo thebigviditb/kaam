@@ -165,8 +165,9 @@ export const hi: Table = {
     'matches.customerHint': 'आपकी ज़रूरत से मेल के हिसाब से क्रम में।',
     'matches.emptyWorker': 'अभी कोई मेल खाता परिवार नहीं। थोड़ी देर बाद देखें, या प्रोफ़ाइल में और शहर जोड़ें।',
     'matches.workerBasis': 'आपकी प्रोफ़ाइल के आधार पर: {tags}, {cities}।',
+    'matches.customerBasis': 'आपको चाहिए: {tags}, {city} में, {times}।',
     'matches.editProfile': 'प्रोफ़ाइल में बदलें',
-    'matches.emptyCustomer': 'अभी कोई मेल खाता कामगार नहीं। थोड़ी देर बाद देखें, या सभी कामगार खोजें।',
+    'matches.emptyCustomer': 'अभी कोई मेल खाता सहायक नहीं। थोड़ी देर बाद देखें, या प्रोफ़ाइल में अपनी ज़रूरतें बदलें।',
 
     'browse.workerTitle': 'परिवार खोजें',
     'browse.customerTitle': 'कामगार खोजें',
@@ -196,7 +197,7 @@ export const hi: Table = {
     'detail.experience': 'अनुभव',
 
     'conn.title': 'संपर्क',
-    'conn.empty': 'अभी कोई संपर्क नहीं। मेल या खोजें से संपर्क करें।',
+    'conn.empty': 'अभी कोई संपर्क नहीं। मेल से संपर्क करें।',
     'conn.received': 'आपके लिए अनुरोध',
     'conn.sent': 'आपके भेजे अनुरोध',
     'conn.accepted': 'जुड़े हुए',

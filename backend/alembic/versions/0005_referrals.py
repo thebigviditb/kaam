@@ -22,7 +22,12 @@ def upgrade() -> None:
     with op.batch_alter_table("users") as b:
         b.add_column(sa.Column("referral_code", sa.String(12), nullable=True))
         b.add_column(
-            sa.Column("referred_by_id", sa.String(36), sa.ForeignKey("users.id"), nullable=True)
+            sa.Column(
+                "referred_by_id",
+                sa.String(36),
+                sa.ForeignKey("users.id", name="fk_users_referred_by"),
+                nullable=True,
+            )
         )
     # Backfill existing users with unique codes.
     conn = op.get_bind()

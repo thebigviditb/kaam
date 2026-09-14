@@ -209,6 +209,8 @@ export const hi: Table = {
     'conn.message': 'संदेश',
     'conn.messageWorker': 'बताएँ कि आप इस काम के लिए सही क्यों हैं…',
     'conn.messageCustomer': 'बताएँ कि आपको क्या चाहिए…',
+    'conn.introWorker': 'नमस्ते, मैं {name} हूँ। मुझे घर के काम की तलाश है। अगर आप चाहें, तो यहीं मुझे संदेश भेजें।',
+    'conn.introCustomer': 'नमस्ते, मैं {name} हूँ। मुझे घर के काम के लिए मदद चाहिए। अगर आप चाहें, तो यहीं मुझे संदेश भेजें।',
     'conn.send': 'अनुरोध भेजें',
     'conn.sentOk': 'अनुरोध भेज दिया',
     'conn.pendingSent': 'उनके जवाब का इंतज़ार है',
@@ -281,15 +283,29 @@ export const hi: Table = {
     'share.bannerWorker': 'किसी को भी काम की तलाश है? Kaam शेयर करें।',
     'share.bannerCustomer': 'किसी को घर के काम के लिए मदद चाहिए? Kaam शेयर करें।',
     'share.linkCopied': 'लिंक कॉपी हो गया',
-    'share.messageWorker':
-      'मुझे Kaam पर घरेलू काम मिल रहा है। अगर आप भी काम ढूँढ रहे हैं, तो यहाँ साइन अप करें: {link}',
-    'share.messageCustomer':
-      'मुझे Kaam पर घर के काम के लिए मदद मिली। अगर आपको कुक, सफ़ाई वाली या आया चाहिए, तो इसे आज़माएँ: {link}',
+    'share.message':
+      'Bay Area में घर के काम के लिए मदद चाहिए, या घर का काम ढूँढ रहे हैं? Kaam आज़माएँ — कुक, सफ़ाई, आया और बुज़ुर्गों की देखभाल, अंग्रेज़ी या हिंदी में। अपने फ़ोन नंबर से साइन अप करें: {link}',
     'settings.title': 'सेटिंग',
     'settings.account': 'खाता',
     'settings.role': 'खाते का प्रकार',
     'settings.logOut': 'लॉग आउट',
     'settings.confirmLogOut': 'काम से लॉग आउट करें?',
+
+    'city.placeholder': 'शहर लिखें',
+    'city.addPlaceholder': 'शहर लिखें और जोड़ें दबाएँ',
+    'city.add': 'जोड़ें',
+
+    'feedback.title': 'सुझाव भेजें',
+    'feedback.hint': 'कोई दिक्कत आई या कोई सुझाव है? हमें बताएँ — यह सीधे टीम तक पहुँचता है।',
+    'feedback.button': 'सुझाव भेजें',
+    'feedback.category': 'यह किस बारे में है?',
+    'feedback.message': 'आपका संदेश',
+    'feedback.messagePlaceholder': 'क्या हुआ, या आप क्या देखना चाहेंगे?',
+    'feedback.contact': 'हम आपसे कैसे संपर्क करें?',
+    'feedback.contactPlaceholder': 'ईमेल या फ़ोन',
+    'feedback.send': 'भेजें',
+    'feedback.messageRequired': 'कृपया कुछ शब्द लिखें (कम से कम 3 अक्षर)',
+    'feedback.success': 'धन्यवाद! हम हर संदेश पढ़ते हैं।',
   },
   tags: {
     cooking: 'खाना बनाना',
@@ -341,6 +357,11 @@ export const hi: Table = {
   mediaKinds: {
     image: 'फ़ोटो',
     video: 'वीडियो',
+  },
+  feedbackCategories: {
+    bug: 'दिक्कत',
+    idea: 'सुझाव',
+    other: 'अन्य',
   },
   reportReasons: {
     inappropriate_behavior: 'अनुचित व्यवहार',

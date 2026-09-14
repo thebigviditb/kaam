@@ -8,6 +8,8 @@ import type {
   CustomerFilters,
   CustomerProfile,
   CustomerProfileIn,
+  FeedbackCreate,
+  FeedbackOut,
   Media,
   MediaRegister,
   Meta,
@@ -85,6 +87,9 @@ export const api = {
 
   // reports
   createReport: (body: ReportCreate) => request<ReportOut>('POST', '/reports', { body }),
+
+  // feedback
+  sendFeedback: (body: FeedbackCreate) => request<FeedbackOut>('POST', '/feedback', { body }),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

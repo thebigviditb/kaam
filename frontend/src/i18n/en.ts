@@ -207,6 +207,8 @@ export const en = {
     'conn.message': 'Message',
     'conn.messageWorker': 'Tell them why you are a good fit…',
     'conn.messageCustomer': 'Tell them what you need…',
+    'conn.introWorker': "Hi, I'm {name}. I'm looking for household work. If you're interested, message me here.",
+    'conn.introCustomer': "Hi, I'm {name}. I'm looking for household help. If you're interested, message me here.",
     'conn.send': 'Send request',
     'conn.sentOk': 'Request sent',
     'conn.pendingSent': 'Waiting for their reply',
@@ -279,15 +281,29 @@ export const en = {
     'share.bannerWorker': "Know somebody who's also looking for work? Share Kaam.",
     'share.bannerCustomer': 'Know somebody who could use a maid? Share Kaam.',
     'share.linkCopied': 'Link copied',
-    'share.messageWorker':
-      "I'm finding household work on Kaam. If you're looking for work too, sign up here: {link}",
-    'share.messageCustomer':
-      'I found household help on Kaam. If you need a cook, cleaner or nanny, try it: {link}',
+    'share.message':
+      'Looking for household help, or for household work, in the Bay Area? Try Kaam — cooks, cleaners, nannies and elder care, in English or Hindi. Sign up with your phone number: {link}',
     'settings.title': 'Settings',
     'settings.account': 'Account',
     'settings.role': 'Account type',
     'settings.logOut': 'Log out',
     'settings.confirmLogOut': 'Log out of Kaam?',
+
+    'city.placeholder': 'Type a city',
+    'city.addPlaceholder': 'Type a city and press Add',
+    'city.add': 'Add',
+
+    'feedback.title': 'Send feedback',
+    'feedback.hint': 'Found a bug or have an idea? Tell us — it goes straight to the team.',
+    'feedback.button': 'Send feedback',
+    'feedback.category': 'What is it about?',
+    'feedback.message': 'Your message',
+    'feedback.messagePlaceholder': 'What happened, or what would you like to see?',
+    'feedback.contact': 'How can we reach you?',
+    'feedback.contactPlaceholder': 'Email or phone',
+    'feedback.send': 'Send',
+    'feedback.messageRequired': 'Please write a few words (at least 3 characters)',
+    'feedback.success': 'Thanks! We read every message.',
   },
   tags: {
     cooking: 'Cooking',
@@ -340,6 +356,11 @@ export const en = {
     image: 'Photo',
     video: 'Video',
   },
+  feedbackCategories: {
+    bug: 'Bug',
+    idea: 'Idea',
+    other: 'Other',
+  },
   reportReasons: {
     inappropriate_behavior: 'Inappropriate behavior',
     harassment: 'Harassment',
@@ -362,4 +383,5 @@ export type Table = {
   roles: Record<string, string>;
   mediaKinds: Record<string, string>;
   reportReasons: Record<string, string>;
+  feedbackCategories: Record<string, string>;
 };

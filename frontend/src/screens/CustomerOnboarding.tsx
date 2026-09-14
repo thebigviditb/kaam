@@ -7,7 +7,7 @@ import { errorMessage } from '@/api/client';
 import { keys, useMeta, useUpsertCustomerProfile } from '@/api/hooks';
 import { DAYS, PAY_TYPES, START_TIMINGS, TIMES, type PayType, type StartTiming, type User } from '@/api/types';
 import { ChipGroup, ChipRadio } from '@/components/Chip';
-import { Select } from '@/components/Select';
+import { CityInput } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
@@ -93,7 +93,7 @@ export function CustomerOnboarding() {
             <Input value={name} onChangeText={setName} placeholder={t('onb.c.namePlaceholder')} autoFocus />
           </Field>
           <Field label={t('onb.c.city')}>
-            <Select value={city} options={meta.data.cities} onChange={setCity} placeholder={t('common.city')} />
+            <CityInput value={city} onChange={setCity} />
           </Field>
         </WizardStep>
       );

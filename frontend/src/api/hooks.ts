@@ -9,6 +9,7 @@ import type {
   ConnectionDecision,
   CustomerFilters,
   CustomerProfileIn,
+  FeedbackCreate,
   MediaRegister,
   ReportCreate,
   UserCreate,
@@ -72,12 +73,12 @@ export function useUpdateMe() {
 
 // ---- worker profile ----
 
-export function useMyWorkerProfile() {
-  const enabled = useSignedIn();
+export function useMyWorkerProfile({ enabled = true } = {}) {
+  const signedIn = useSignedIn();
   return useQuery({
     queryKey: keys.workerProfile,
     queryFn: api.getMyWorkerProfile,
-    enabled,
+    enabled: signedIn && enabled,
     retry: false,
   });
 }
@@ -112,12 +113,12 @@ export function useWorker(id: string | undefined) {
 
 // ---- customer profile ----
 
-export function useMyCustomerProfile() {
-  const enabled = useSignedIn();
+export function useMyCustomerProfile({ enabled = true } = {}) {
+  const signedIn = useSignedIn();
   return useQuery({
     queryKey: keys.customerProfile,
     queryFn: api.getMyCustomerProfile,
-    enabled,
+    enabled: signedIn && enabled,
     retry: false,
   });
 }
@@ -358,4 +359,10 @@ export function useMarkRead(connectionId: string) {
 
 export function useCreateReport() {
   return useMutation({ mutationFn: (body: ReportCreate) => api.createReport(body) });
+}
+
+// ---- feedback ----
+
+export function useSendFeedback() {
+  return useMutation({ mutationFn: (body: FeedbackCreate) => api.sendFeedback(body) });
 }

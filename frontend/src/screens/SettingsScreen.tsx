@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useMe, useUpdateMe } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthContext';
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { ShareButton } from '@/components/ShareButton';
 import { confirm } from '@/components/notify';
@@ -20,6 +21,7 @@ export function SettingsScreen() {
   const updateMe = useUpdateMe();
   const qc = useQueryClient();
   const router = useRouter();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const logOut = async () => {
     if (!(await confirm(t('settings.confirmLogOut'), { ok: t('settings.logOut'), cancel: t('common.cancel') })))
@@ -37,6 +39,12 @@ export function SettingsScreen() {
         <Text style={text.muted}>{t('share.hint')}</Text>
         <ShareButton style={{ marginTop: spacing.xs }} />
       </Card>
+      <Card style={s.shareCard}>
+        <Text style={text.h3}>{t('feedback.title')}</Text>
+        <Text style={text.muted}>{t('feedback.hint')}</Text>
+        <Button title={t('feedback.button')} variant="secondary" onPress={() => setFeedbackOpen(true)} style={{ marginTop: spacing.xs }} />
+      </Card>
+      <FeedbackModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} page="settings" />
       <Section title={t('common.language')}>
         <LanguageToggle onChange={(l) => updateMe.mutate({ preferred_language: l })} />
       </Section>

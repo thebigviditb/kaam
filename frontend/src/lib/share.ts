@@ -12,11 +12,11 @@ export function referralLink(referralCode: string): string {
   return `${config.siteUrl}/?ref=${encodeURIComponent(referralCode)}`;
 }
 
-export function shareMessage({ role, lang, referralCode }: { role: Role; lang: Language; referralCode: string }) {
+/** One invite text for everyone (workers and households); only the language varies. */
+export function shareMessage({ lang, referralCode }: { role?: Role; lang: Language; referralCode: string }) {
   const table = lang === 'hi' ? hi : en;
-  const key = role === 'worker' ? 'share.messageWorker' : 'share.messageCustomer';
   const link = referralLink(referralCode);
-  return { link, text: (table.strings[key] ?? en.strings[key]).replace('{link}', link) };
+  return { link, text: (table.strings['share.message'] ?? en.strings['share.message']).replace('{link}', link) };
 }
 
 async function copyToClipboard(value: string): Promise<boolean> {
@@ -32,7 +32,7 @@ async function copyToClipboard(value: string): Promise<boolean> {
 }
 
 /**
- * Share a role-specific invite with the user's referral link.
+ * Share the Kaam invite with the user's referral link.
  * Web: the native share sheet (iOS Safari / home-screen app) when available, otherwise
  * WhatsApp in a new tab plus the link on the clipboard. Native: the OS share sheet.
  * Returns 'whatsapp' when the caller should tell the user the link was copied.

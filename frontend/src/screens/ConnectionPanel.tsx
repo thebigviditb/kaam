@@ -3,7 +3,13 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { useCreateConnection, useDecideConnection, useWithdrawConnection } from '@/api/hooks';
+import {
+  useCreateConnection,
+  useDecideConnection,
+  useMyCustomerProfile,
+  useMyWorkerProfile,
+  useWithdrawConnection,
+} from '@/api/hooks';
 import type { ConnectionSummary, Role } from '@/api/types';
 import { PhoneLink } from '@/components/cards';
 import { confirm } from '@/components/notify';
@@ -31,9 +37,16 @@ export function ConnectionPanel({
   const create = useCreateConnection();
   const decide = useDecideConnection();
   const withdraw = useWithdrawConnection();
-  const [message, setMessage] = useState('');
+  // null = untouched: show the intro draft (viewer's language + own display name) until the user edits.
+  const [typed, setTyped] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const myWorker = useMyWorkerProfile({ enabled: viewerRole === 'worker' });
+  const myCustomer = useMyCustomerProfile({ enabled: viewerRole === 'customer' });
+  const myName = (viewerRole === 'worker' ? myWorker.data?.display_name : myCustomer.data?.display_name)?.trim();
+  const draft = myName ? t(viewerRole === 'worker' ? 'conn.introWorker' : 'conn.introCustomer', { name: myName }) : '';
+  const message = typed ?? draft;
+  const setMessage = setTyped;
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(null);

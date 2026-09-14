@@ -202,6 +202,23 @@ export type ReportCreate = {
 
 export type ReportOut = { id: string; created_at: string };
 
+// ---- feedback ----
+
+export type FeedbackCategory = 'bug' | 'idea' | 'other';
+export const FEEDBACK_CATEGORIES: FeedbackCategory[] = ['bug', 'idea', 'other'];
+
+export type FeedbackCreate = {
+  /** 3..4000 chars. */
+  message: string;
+  category: FeedbackCategory;
+  /** How to reach the sender (email/phone), max 120 chars. */
+  contact?: string;
+  /** Where the form was opened, e.g. 'settings'. */
+  page?: string;
+};
+
+export type FeedbackOut = { id: string; created_at: string };
+
 export type Meta = {
   tags: string[];
   cities: string[];

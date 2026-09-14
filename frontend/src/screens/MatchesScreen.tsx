@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useMatchingCustomers, useMatchingWorkers, useMyCustomerProfile, useMyWorkerProfile } from '@/api/hooks';
 import { CustomerCard, WorkerCard } from '@/components/cards';
+import { ShareBanner } from '@/components/ShareBanner';
 import { EmptyState, ErrorView, Loading, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, radius, spacing, text } from '@/theme';
@@ -93,6 +94,7 @@ export function WorkerMatches() {
   const q = useMatchingCustomers();
   return (
     <Screen title={t('matches.workerTitle')} subtitle={t('matches.workerHint')}>
+      <ShareBanner role="worker" />
       <ProfileBasis />
       <WelcomeBanner message={t('matches.welcomeWorker')} />
       {q.isPending ? (
@@ -122,6 +124,7 @@ export function CustomerMatches() {
   const q = useMatchingWorkers();
   return (
     <Screen title={t('matches.customerTitle')} subtitle={t('matches.customerHint')}>
+      <ShareBanner role="customer" />
       <CustomerProfileBasis />
       <WelcomeBanner message={t('matches.welcomeCustomer')} />
       {q.isPending ? (

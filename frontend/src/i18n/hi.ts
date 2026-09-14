@@ -275,6 +275,16 @@ export const hi: Table = {
     'report.descRequired': 'कृपया बताएँ क्या हुआ',
     'report.success': 'धन्यवाद — हम इसे देखेंगे।',
 
+    'share.button': 'Kaam शेयर करें',
+    'share.title': 'Kaam शेयर करें',
+    'share.hint': 'किसी को Kaam की ज़रूरत हो सकती है? उन्हें लिंक भेजें।',
+    'share.bannerWorker': 'किसी को भी काम की तलाश है? Kaam शेयर करें।',
+    'share.bannerCustomer': 'किसी को घर के काम के लिए मदद चाहिए? Kaam शेयर करें।',
+    'share.linkCopied': 'लिंक कॉपी हो गया',
+    'share.messageWorker':
+      'मुझे Kaam पर घरेलू काम मिल रहा है। अगर आप भी काम ढूँढ रहे हैं, तो यहाँ साइन अप करें: {link}',
+    'share.messageCustomer':
+      'मुझे Kaam पर घर के काम के लिए मदद मिली। अगर आपको कुक, सफ़ाई वाली या आया चाहिए, तो इसे आज़माएँ: {link}',
     'settings.title': 'सेटिंग',
     'settings.account': 'खाता',
     'settings.role': 'खाते का प्रकार',

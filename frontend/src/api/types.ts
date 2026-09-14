@@ -24,12 +24,16 @@ export type User = {
   preferred_language: Language;
   created_at: string;
   onboarded: boolean;
+  /** Stable 6–8 char code; `?ref=<code>` on the site URL credits this user for a sign-up. */
+  referral_code: string;
 };
 
 export type UserCreate = {
   role: Role;
   phone: string;
   preferred_language?: Language;
+  /** The inviter's referral code (from `?ref=`); unknown codes are ignored by the server. */
+  ref?: string;
 };
 
 export type UserUpdate = {

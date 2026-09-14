@@ -33,10 +33,21 @@ const tags = `
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />`;
 
+// Must come after Expo's reset <style> so `100dvh` wins the cascade over its `height: 100%`.
+const viewportStyle = `
+    <style id="kaam-viewport">
+      /* Expo's reset uses height:100% + overflow:hidden, which on iOS Safari is taller than the
+         visible area while the toolbar shows and cuts off the bottom tab bar. Prefer the dynamic
+         viewport height. (The tab bar's safe-area padding comes from useSafeAreaInsets in
+         src/components/Tabs.tsx, which reads env(safe-area-inset-bottom) on web.) */
+      html, body, #root { height: 100%; min-height: -webkit-fill-available; height: 100dvh; }
+    </style>`;
+
 if (!html.includes('rel="manifest"')) {
   html = html
     .replace('shrink-to-fit=no"', 'shrink-to-fit=no, viewport-fit=cover"')
-    .replace('<title>Kaam</title>', `<title>Kaam</title>${tags}`);
+    .replace('<title>Kaam</title>', `<title>Kaam</title>${tags}`)
+    .replace(/(<style id="expo-reset">[\s\S]*?<\/style>)/, `$1${viewportStyle}`);
   writeFileSync(file, html);
   console.log('PWA metadata injected into dist/index.html');
 } else {

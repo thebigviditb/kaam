@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
 
@@ -14,13 +15,21 @@ export type TabDef = {
 
 /** `hidden` routes live inside the tab navigator (detail screens) but get no tab button. */
 export function AppTabs({ tabs, hidden = [] }: { tabs: TabDef[]; hidden?: string[] }) {
+  // Keep the bar above the iOS home indicator (home-screen app / viewport-fit=cover).
+  const insets = useSafeAreaInsets();
+  const bottom = Math.max(insets.bottom, 8);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.bg },
+        tabBarStyle: {
+          borderTopColor: colors.border,
+          backgroundColor: colors.bg,
+          paddingBottom: bottom,
+          height: 56 + bottom,
+        },
         tabBarLabelStyle: { fontSize: 12 },
         sceneStyle: { backgroundColor: colors.bg },
       }}>

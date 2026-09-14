@@ -6,6 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useMe, useUpdateMe } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { ShareButton } from '@/components/ShareButton';
 import { confirm } from '@/components/notify';
 import { Button, Card, Divider, Screen, Section } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -31,6 +32,11 @@ export function SettingsScreen() {
   const email = me.data?.email ?? auth.email;
   return (
     <Screen title={t('settings.title')}>
+      <Card style={s.shareCard}>
+        <Text style={text.h3}>{t('share.title')}</Text>
+        <Text style={text.muted}>{t('share.hint')}</Text>
+        <ShareButton style={{ marginTop: spacing.xs }} />
+      </Card>
       <Section title={t('common.language')}>
         <LanguageToggle onChange={(l) => updateMe.mutate({ preferred_language: l })} />
       </Section>
@@ -63,4 +69,5 @@ export function SettingsScreen() {
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
+  shareCard: { gap: spacing.sm },
 });

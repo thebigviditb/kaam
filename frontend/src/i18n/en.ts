@@ -273,6 +273,16 @@ export const en = {
     'report.descRequired': 'Please describe what happened',
     'report.success': "Thanks — we'll look into it.",
 
+    'share.button': 'Share Kaam',
+    'share.title': 'Share Kaam',
+    'share.hint': 'Know someone who could use Kaam? Send them the link.',
+    'share.bannerWorker': "Know somebody who's also looking for work? Share Kaam.",
+    'share.bannerCustomer': 'Know somebody who could use a maid? Share Kaam.',
+    'share.linkCopied': 'Link copied',
+    'share.messageWorker':
+      "I'm finding household work on Kaam. If you're looking for work too, sign up here: {link}",
+    'share.messageCustomer':
+      'I found household help on Kaam. If you need a cook, cleaner or nanny, try it: {link}',
     'settings.title': 'Settings',
     'settings.account': 'Account',
     'settings.role': 'Account type',

@@ -12,7 +12,11 @@ import { useMe } from '@/api/hooks';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ErrorView } from '@/components/ui';
 import { I18nProvider, useI18n } from '@/i18n';
+import { captureReferralFromUrl } from '@/lib/referral';
 import { colors } from '@/theme';
+
+// Before the router reads the URL: stash `?ref=` and strip it.
+captureReferralFromUrl();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 15_000 } },

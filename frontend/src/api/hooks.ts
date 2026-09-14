@@ -17,6 +17,7 @@ import type {
   WorkerProfileIn,
 } from './types';
 import { useAuth } from '@/auth/AuthContext';
+import { pendingRef } from '@/lib/referral';
 
 export const keys = {
   meta: ['meta'] as const,
@@ -50,8 +51,14 @@ export function useMe() {
 export function useCreateMe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: UserCreate) => api.createMe(body),
-    onSuccess: (user) => qc.setQueryData(keys.me, user),
+    mutationFn: async (body: UserCreate) => {
+      const ref = await pendingRef.get();
+      return api.createMe(ref ? { ...body, ref } : body);
+    },
+    onSuccess: (user) => {
+      qc.setQueryData(keys.me, user);
+      pendingRef.clear();
+    },
   });
 }
 

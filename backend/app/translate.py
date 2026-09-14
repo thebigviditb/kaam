@@ -22,8 +22,8 @@ in the San Francisco Bay Area. Users write in English, Hindi (Devanagari), or Hi
 (Hindi in Latin letters, often mixed with English).
 
 Return JSON with:
-- "lang": the language the message is written in: "en" for English, "hi" for Hindi or
-  Hinglish.
+- "lang": how the message is written: "en" for English, "hi" for Hindi in Devanagari
+  script, "hinglish" for Hindi (or Hindi mixed with English) written in Latin letters.
 - "en": the message in natural, plain English.
 - "hi": the message in natural, polite Hindi in Devanagari script.
 
@@ -34,7 +34,7 @@ that language. Do not add anything, do not explain."""
 SCHEMA = {
     "type": "object",
     "properties": {
-        "lang": {"type": "string", "enum": ["en", "hi"]},
+        "lang": {"type": "string", "enum": ["en", "hi", "hinglish"]},
         "en": {"type": "string"},
         "hi": {"type": "string"},
     },

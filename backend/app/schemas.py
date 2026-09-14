@@ -7,6 +7,8 @@ from app.constants import DAYS, REPORT_REASONS, TAGS, TIMES
 
 Role = Literal["worker", "customer"]
 Language = Literal["en", "hi"]
+MessageLang = Literal["en", "hi", "hinglish"]
+HinglishDisplay = Literal["original", "english"]
 PayType = Literal["hourly", "daily", "monthly", "one_time"]
 StartTiming = Literal["asap", "within_2_weeks", "within_month", "flexible"]
 ConnectionStatus = Literal["pending", "accepted", "declined"]
@@ -63,6 +65,7 @@ class UserOut(ORM):
     created_at: datetime
     onboarded: bool = False
     deletion_scheduled_for: datetime | None = None
+    hinglish_display: HinglishDisplay | None = None
 
 
 class UserCreate(BaseModel):
@@ -75,6 +78,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     phone: str | None = Field(default=None, min_length=7, max_length=32)
     preferred_language: Language | None = None
+    hinglish_display: HinglishDisplay | None = None
 
 
 # ---- media ----
@@ -221,7 +225,7 @@ class ChatMessage(ORM):
     connection_id: str
     sender_id: str
     body: str
-    lang: Language | None = None
+    lang: MessageLang | None = None
     translated_body: str | None = None
     created_at: datetime
 

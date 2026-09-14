@@ -78,6 +78,8 @@ def update_me(
         user.phone = body.phone
     if body.preferred_language is not None:
         user.preferred_language = body.preferred_language
+    if body.hinglish_display is not None:
+        user.hinglish_display = body.hinglish_display
     if not user.phone:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "phone is required")
     db.commit()

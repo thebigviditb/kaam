@@ -47,6 +47,9 @@ class User(Base):
     )
     referred_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # For English readers: show Hinglish messages "original" (as written) or "english".
+    # None = not asked yet; the chat asks the first time.
+    hinglish_display: Mapped[str | None] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(

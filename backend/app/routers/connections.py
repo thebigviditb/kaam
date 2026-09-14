@@ -24,13 +24,20 @@ def _viewer_lang(viewer: User, lang: str | None) -> str:
     return lang if lang in tr.LANGS else (viewer.preferred_language or "en")
 
 
-def message_out(m: Message, viewer_lang: str) -> ChatMessage:
-    """The message plus, when it isn't already in the viewer's language, a translation."""
+def message_out(m: Message, viewer_lang: str, hinglish: str | None = None) -> ChatMessage:
+    """The message plus, when it isn't already in the viewer's language, a translation.
+
+    Hindi readers always get full Devanagari Hindi. English readers get Hinglish as written
+    unless they chose "english" (None = not chosen yet; the app asks under the message).
+    """
     out = ChatMessage.model_validate(m)
-    if m.translations and m.lang and m.lang != viewer_lang:
-        t = m.translations.get(viewer_lang)
-        if t and t.strip() != m.body.strip():
-            out.translated_body = t
+    if not (m.translations and m.lang) or m.lang == viewer_lang:
+        return out
+    if m.lang == "hinglish" and viewer_lang == "en" and hinglish != "english":
+        return out
+    t = m.translations.get(viewer_lang)
+    if t and t.strip() != m.body.strip():
+        out.translated_body = t
     return out
 
 
@@ -57,7 +64,9 @@ def _out(
             .order_by(Message.created_at.desc())
             .first()
         )
-        out.last_message = message_out(last, _viewer_lang(viewer, lang)) if last else None
+        out.last_message = (
+            message_out(last, _viewer_lang(viewer, lang), viewer.hinglish_display) if last else None
+        )
         unread = db.query(func.count(Message.id)).filter(
             Message.connection_id == c.id, Message.sender_id != viewer.id
         )
@@ -191,7 +200,8 @@ def list_messages(
                 Message.id != anchor.id,
             )
     viewer_lang = _viewer_lang(user, lang)
-    return [message_out(m, viewer_lang) for m in q.order_by(Message.created_at.asc()).limit(limit)]
+    rows = q.order_by(Message.created_at.asc()).limit(limit)
+    return [message_out(m, viewer_lang, user.hinglish_display) for m in rows]
 
 
 @router.post(

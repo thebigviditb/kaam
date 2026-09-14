@@ -60,3 +60,49 @@ def test_no_key_means_no_translation():
 
     with patch("app.translate.get_settings", return_value=Settings(anthropic_api_key="")):
         assert translate.translate("hello") is None
+
+
+def test_hinglish_rules(client, worker, customer):
+    cid = _accepted(client, worker, customer)
+    fake = Translation(
+        lang="hinglish", en="I can come Monday morning.", hi="मैं सोमवार सुबह आ सकती हूँ।"
+    )
+    with patch("app.translate.translate", return_value=fake):
+        client.post(
+            f"/connections/{cid}/messages",
+            json={"body": "Main Monday subah aa sakti hoon."},
+            headers=WORKER,
+        )
+
+    # English reader, no preference yet: shown as written (app will ask)
+    m = client.get(f"/connections/{cid}/messages?lang=en", headers=CUSTOMER).json()[0]
+    assert m["lang"] == "hinglish" and m["translated_body"] is None
+    assert client.get("/me", headers=CUSTOMER).json()["hinglish_display"] is None
+
+    # chooses English
+    assert (
+        client.put("/me", json={"hinglish_display": "english"}, headers=CUSTOMER).json()[
+            "hinglish_display"
+        ]
+        == "english"
+    )
+    m = client.get(f"/connections/{cid}/messages?lang=en", headers=CUSTOMER).json()[0]
+    assert m["translated_body"] == fake.en
+
+    # chooses to keep original
+    client.put("/me", json={"hinglish_display": "original"}, headers=CUSTOMER)
+    assert (
+        client.get(f"/connections/{cid}/messages?lang=en", headers=CUSTOMER).json()[0][
+            "translated_body"
+        ]
+        is None
+    )
+
+    # Hindi reader always gets full Hindi, regardless of that preference
+    assert (
+        client.get(f"/connections/{cid}/messages?lang=hi", headers=CUSTOMER).json()[0][
+            "translated_body"
+        ]
+        == fake.hi
+    )
+    assert client.put("/me", json={"hinglish_display": "nope"}, headers=CUSTOMER).status_code == 422

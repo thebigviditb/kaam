@@ -48,6 +48,7 @@ class UserOut(ORM):
     email: str | None
     phone: str | None
     preferred_language: Language
+    referral_code: str
     created_at: datetime
     onboarded: bool = False
 
@@ -56,6 +57,7 @@ class UserCreate(BaseModel):
     role: Role
     phone: str = Field(min_length=7, max_length=32)
     preferred_language: Language = "en"
+    ref: str | None = Field(default=None, max_length=12)
 
 
 class UserUpdate(BaseModel):

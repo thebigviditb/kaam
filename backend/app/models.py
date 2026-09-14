@@ -25,6 +25,14 @@ def now() -> datetime:
     return datetime.now(UTC)
 
 
+def new_referral_code() -> str:
+    """Short, shareable, unambiguous (no 0/O/1/I)."""
+    import secrets
+
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(7))
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -34,6 +42,10 @@ class User(Base):
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32), index=True)
     preferred_language: Mapped[str] = mapped_column(String(8), default="en")
+    referral_code: Mapped[str] = mapped_column(
+        String(12), unique=True, index=True, default=new_referral_code
+    )
+    referred_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(

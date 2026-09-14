@@ -51,12 +51,16 @@ def register_me(
     existing = db.query(User).filter(User.cognito_sub == claims.sub).one_or_none()
     if existing:
         return user_out(existing)
+    inviter = None
+    if body.ref:
+        inviter = db.query(User).filter(User.referral_code == body.ref.strip().upper()).first()
     user = User(
         cognito_sub=claims.sub,
         email=claims.resolve_email(settings),
         role=body.role,
         phone=body.phone,
         preferred_language=body.preferred_language,
+        referred_by_id=inviter.id if inviter else None,
     )
     db.add(user)
     db.commit()

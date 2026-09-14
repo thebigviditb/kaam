@@ -158,5 +158,13 @@ def test_worker_city_validation(client, worker):
         ).status_code
         == 200
     )
+    # Normalized and de-duplicated
+    r = client.put(
+        "/workers/me",
+        json={**WORKER_PROFILE, "work_cities": ["fremont", "Fremont ", "mountain house"]},
+        headers=WORKER,
+    )
+    assert r.status_code == 200 and r.json()["work_cities"] == ["Fremont", "Mountain House"]
+    client.put("/workers/me", json=WORKER_PROFILE, headers=WORKER)
     r = client.get("/workers/me", headers=WORKER).json()
     assert r["city"] == "Fremont" and r["work_cities"] == ["Fremont", "Newark"]

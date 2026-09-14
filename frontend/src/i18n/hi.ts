@@ -132,7 +132,7 @@ export const hi: Table = {
     'onb.c.descPlaceholder': 'जैसे चार लोगों के लिए शाकाहारी खाना, घर में दो कुत्ते…',
     'onb.c.finish': 'कामगार ढूँढें',
     'onb.c.mediaTitle': 'काम की फ़ोटो',
-    'onb.c.mediaHint': 'सहायकों को दिखाएँ कि क्या करना है — रसोई, कमरे, वगैरह। इसे अभी छोड़कर बाद में भी जोड़ सकते हैं।',
+    'onb.c.mediaHint': 'सहायकों को दिखाएँ कि क्या करना है: रसोई, कमरे, वगैरह। इसे अभी छोड़कर बाद में भी जोड़ सकते हैं।',
 
     'onb.w.nameTitle': 'अपने बारे में बताएँ',
     'onb.w.name': 'आपका नाम',
@@ -257,7 +257,7 @@ export const hi: Table = {
     'profile.mediaHint': 'ज़्यादा से ज़्यादा {n}। फ़ोटो 10 MB तक, वीडियो 100 MB तक।',
     'profile.addMedia': 'फ़ोटो या वीडियो जोड़ें',
     'profile.workMedia': 'काम की फ़ोटो',
-    'profile.workMediaHint': 'सहायकों को दिखाएँ कि क्या करना है — रसोई, कमरे, वगैरह।',
+    'profile.workMediaHint': 'सहायकों को दिखाएँ कि क्या करना है: रसोई, कमरे, वगैरह।',
     'profile.uploading': 'अपलोड हो रहा है…',
     'profile.uploadFailed': 'अपलोड नहीं हुआ',
     'profile.tooLarge': 'फ़ाइल बहुत बड़ी है',
@@ -275,7 +275,7 @@ export const hi: Table = {
     'report.submit': 'भेजें',
     'report.reasonRequired': 'कारण चुनें',
     'report.descRequired': 'कृपया बताएँ क्या हुआ',
-    'report.success': 'धन्यवाद — हम इसे देखेंगे।',
+    'report.success': 'धन्यवाद, हम इसे देखेंगे।',
 
     'share.button': 'Kaam शेयर करें',
     'share.title': 'Kaam शेयर करें',
@@ -296,7 +296,7 @@ export const hi: Table = {
     'city.add': 'जोड़ें',
 
     'feedback.title': 'सुझाव भेजें',
-    'feedback.hint': 'कोई दिक्कत आई या कोई सुझाव है? हमें बताएँ — यह सीधे टीम तक पहुँचता है।',
+    'feedback.hint': 'कोई दिक्कत आई या कोई सुझाव है? हमें बताएँ। यह सीधे टीम तक पहुँचता है।',
     'feedback.button': 'सुझाव भेजें',
     'feedback.category': 'यह किस बारे में है?',
     'feedback.message': 'आपका संदेश',

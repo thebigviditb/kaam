@@ -130,7 +130,7 @@ export const en = {
     'onb.c.descPlaceholder': 'e.g. Vegetarian cooking for four, two dogs at home…',
     'onb.c.finish': 'Find workers',
     'onb.c.mediaTitle': 'Photos of the work',
-    'onb.c.mediaHint': 'Show helpers what needs doing — the kitchen, the rooms, etc. You can skip this and add them later.',
+    'onb.c.mediaHint': 'Show helpers what needs doing: the kitchen, the rooms, etc. You can skip this and add them later.',
 
     'onb.w.nameTitle': 'Tell us about yourself',
     'onb.w.name': 'Your name',
@@ -255,7 +255,7 @@ export const en = {
     'profile.mediaHint': 'Up to {n} items. Images up to 10 MB, videos up to 100 MB.',
     'profile.addMedia': 'Add photos or videos',
     'profile.workMedia': 'Photos of the work',
-    'profile.workMediaHint': 'Show helpers what needs doing — the kitchen, the rooms, etc.',
+    'profile.workMediaHint': 'Show helpers what needs doing: the kitchen, the rooms, etc.',
     'profile.uploading': 'Uploading…',
     'profile.uploadFailed': 'Upload failed',
     'profile.tooLarge': 'File is too large',
@@ -273,7 +273,7 @@ export const en = {
     'report.submit': 'Submit',
     'report.reasonRequired': 'Choose a reason',
     'report.descRequired': 'Please describe what happened',
-    'report.success': "Thanks — we'll look into it.",
+    'report.success': "Thanks, we'll look into it.",
 
     'share.button': 'Share Kaam',
     'share.title': 'Share Kaam',
@@ -294,7 +294,7 @@ export const en = {
     'city.add': 'Add',
 
     'feedback.title': 'Send feedback',
-    'feedback.hint': 'Found a bug or have an idea? Tell us — it goes straight to the team.',
+    'feedback.hint': 'Found a bug or have an idea? Tell us. It goes straight to the team.',
     'feedback.button': 'Send feedback',
     'feedback.category': 'What is it about?',
     'feedback.message': 'Your message',

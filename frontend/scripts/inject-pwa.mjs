@@ -16,7 +16,7 @@ const file = new URL('../dist/index.html', import.meta.url);
 let html = readFileSync(file, 'utf8');
 
 const tags = `
-    <meta name="description" content="Household help in the Bay Area — find work, find help." />
+    <meta name="description" content="Household help in the Bay Area. Find work, find help." />
     <meta name="theme-color" content="#c2410c" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -26,7 +26,7 @@ const tags = `
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Kaam" />
-    <meta property="og:title" content="Kaam — household help in the Bay Area" />
+    <meta property="og:title" content="Kaam: household help in the Bay Area" />
     <meta property="og:description" content="Cooks, cleaners, nannies and elder care. Find work or find help, in English or Hindi. Sign up with your phone number." />
     <meta property="og:url" content="${host}/" />
     <meta property="og:image" content="${host}/icons/icon-512.png" />

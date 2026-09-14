@@ -43,6 +43,10 @@ export const api = {
   getMe: () => nullOn404(request<User>('GET', '/me')),
   createMe: (body: UserCreate) => request<User>('POST', '/me', { body }),
   updateMe: (body: UserUpdate) => request<User>('PUT', '/me', { body }),
+  /** Schedule deletion after the grace period; the server hides the profile immediately. */
+  deleteMe: () => request<User>('POST', '/me/delete'),
+  /** Cancel a scheduled deletion and unhide the profile. */
+  restoreMe: () => request<User>('POST', '/me/restore'),
 
   // worker profile
   getMyWorkerProfile: () => nullOn404(request<WorkerProfile>('GET', '/workers/me')),

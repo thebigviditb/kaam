@@ -26,6 +26,8 @@ export type User = {
   onboarded: boolean;
   /** Stable 6–8 char code; `?ref=<code>` on the site URL credits this user for a sign-up. */
   referral_code: string;
+  /** When set, the account is scheduled to be purged at this time (ISO datetime); POST /me/restore cancels. */
+  deletion_scheduled_for: string | null;
 };
 
 export type UserCreate = {

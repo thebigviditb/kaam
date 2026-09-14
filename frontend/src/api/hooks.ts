@@ -76,6 +76,26 @@ export function useUpdateMe() {
   });
 }
 
+export function useDeleteMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.deleteMe(),
+    onSuccess: (user) => qc.setQueryData(keys.me, user),
+  });
+}
+
+export function useRestoreMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.restoreMe(),
+    onSuccess: (user) => {
+      qc.setQueryData(keys.me, user);
+      // The profile is visible again; everything derived from it (profiles, matches) is stale.
+      void qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
+    },
+  });
+}
+
 // ---- worker profile ----
 
 export function useMyWorkerProfile({ enabled = true } = {}) {

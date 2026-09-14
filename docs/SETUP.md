@@ -107,6 +107,7 @@ preview deploy is a staging deploy.
 | MEDIA_AWS_REGION | us-west-2 |
 | CORS_ORIGINS | `https://kaam-web-tau.vercel.app` (prod) / `https://kaam-web-staging.vercel.app` (staging) |
 | ANTHROPIC_API_KEY | Anthropic API key used for chat translation (create one for Kaam at console.anthropic.com) |
+| CRON_SECRET | random string; Vercel sends it as `Authorization: Bearer` when invoking the daily purge cron |
 
 **kaam-web**
 

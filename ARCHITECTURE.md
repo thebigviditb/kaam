@@ -75,7 +75,7 @@ for audio streaming. Nothing in the web app has to change for that.
 
 | Table            | Key fields |
 |------------------|-----------|
-| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language, referral_code, referred_by_id |
+| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language, referral_code, referred_by_id, deletion_requested_at |
 | worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city (home), work_cities[], days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
 | connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
@@ -109,6 +109,8 @@ GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, acc
   the row) and served in the viewer's language (`?lang=`), with the original available.
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
 POST /feedback              (Settings → Send feedback)
+POST /me/delete  POST /me/restore   (30-day grace; a newer sign-in token auto-restores)
+GET  /internal/purge-deleted-accounts   (Vercel cron, daily 09:00 UTC, Bearer CRON_SECRET)
 POST /media/presign         POST /media              DELETE /media/{id}
 ```
 

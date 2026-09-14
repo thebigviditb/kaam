@@ -75,12 +75,13 @@ for audio streaming. Nothing in the web app has to change for that.
 
 | Table            | Key fields |
 |------------------|-----------|
-| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language |
+| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language, referral_code, referred_by_id |
 | worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city (home), work_cities[], days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
 | connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
 | messages         | id, connection_id, sender_id, body, created_at |
 | reports          | id, reporter_id, reported_user_id, connection_id?, reason, description, status |
+| feedback         | id, user_id, category (bug/idea/other), message, contact?, page? |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
 
 **Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
@@ -91,7 +92,8 @@ days + shared time slots; zero shared tags, or a household city the worker doesn
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
 dishes, ironing, childcare, elder_care, grocery, other.
 
-**City:** a fixed Bay Area list so filtering works without geocoding.
+**City:** free text, normalized (case/spacing) so "fremont" and "Fremont" match; `/meta.cities`
+is a Bay Area + California suggestion list for autocomplete, not a constraint.
 
 ### Endpoints (v1)
 
@@ -104,6 +106,7 @@ GET /customers/matching     GET /customers/{id}      ← the voice agent's "what
 POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
 GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
+POST /feedback              (Settings → Send feedback)
 POST /media/presign         POST /media              DELETE /media/{id}
 ```
 

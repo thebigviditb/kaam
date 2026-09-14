@@ -15,9 +15,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
-import { useMarkRead, useMe, useMessages, useMyConnections, useSendMessage } from '@/api/hooks';
-import type { ChatMessage, Connection, Role } from '@/api/types';
+import { useMarkRead, useMe, useMessages, useMyConnections, useSendMessage, useUpdateMe } from '@/api/hooks';
+import type { ChatMessage, Connection, HinglishDisplay, Role } from '@/api/types';
 import { Back } from '@/components/Back';
+import { HinglishDisplayToggle } from '@/components/HinglishDisplayToggle';
 import { ReportModal } from '@/components/ReportModal';
 import { ErrorView, InlineMessage, Loading } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -65,10 +66,20 @@ export function ChatScreen() {
       </View>
     );
   }
-  return <ChatRoom conn={conn} role={role} myId={me.data.id} />;
+  return <ChatRoom conn={conn} role={role} myId={me.data.id} hinglishDisplay={me.data.hinglish_display ?? null} />;
 }
 
-function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: string }) {
+function ChatRoom({
+  conn,
+  role,
+  myId,
+  hinglishDisplay,
+}: {
+  conn: Connection;
+  role: Role;
+  myId: string;
+  hinglishDisplay: HinglishDisplay | null;
+}) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -82,6 +93,7 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   const messages = useMessages(conn.id, { enabled: accepted });
   const send = useSendMessage(conn.id, myId);
   const markRead = useMarkRead(conn.id);
+  const updateMe = useUpdateMe();
 
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
@@ -103,6 +115,20 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   const list = useMemo(() => data ?? [], [data]);
   const count = list.length;
   const lastIncomingId = [...list].reverse().find((m) => m.sender_id !== myId)?.id ?? null;
+  // English readers who have not said how they want Hinglish shown get asked once,
+  // under the first Hinglish message from the other party. Hindi readers always get
+  // Hindi translations, so the question never applies to them.
+  const hinglishPromptId =
+    lang === 'en' && hinglishDisplay === null
+      ? (list.find((m) => m.sender_id !== myId && m.lang === 'hinglish')?.id ?? null)
+      : null;
+  const chooseHinglish = useCallback(
+    (v: HinglishDisplay) => {
+      if (updateMe.isPending) return;
+      updateMe.mutate({ hinglish_display: v });
+    },
+    [updateMe],
+  );
 
   // Mark read on open and whenever a new incoming message lands while we're here.
   useEffect(() => {
@@ -210,14 +236,26 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
                     <Text style={s.dayLabel}>{formatDayLabel(g.date, lang, t)}</Text>
                   </View>
                   {g.items.map((m) => (
-                    <Bubble
-                      key={m.id}
-                      m={m}
-                      mine={m.sender_id === myId}
-                      lang={lang}
-                      original={showingOriginal.has(m.id)}
-                      onToggleOriginal={toggleOriginal}
-                    />
+                    <React.Fragment key={m.id}>
+                      <Bubble
+                        m={m}
+                        mine={m.sender_id === myId}
+                        lang={lang}
+                        original={showingOriginal.has(m.id)}
+                        onToggleOriginal={toggleOriginal}
+                      />
+                      {m.id === hinglishPromptId ? (
+                        <View style={s.hinglishPrompt} testID="hinglish-prompt">
+                          <Text style={s.hinglishPromptText}>{t('chat.hinglishPrompt')}</Text>
+                          <HinglishDisplayToggle
+                            value={null}
+                            onChange={chooseHinglish}
+                            disabled={updateMe.isPending}
+                            compact
+                          />
+                        </View>
+                      ) : null}
+                    </React.Fragment>
                   ))}
                 </View>
               ))
@@ -380,6 +418,8 @@ const s = StyleSheet.create({
   bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, lineHeight: 21, color: colors.text },
+  hinglishPrompt: { alignSelf: 'flex-start', maxWidth: '80%', marginTop: 2, marginBottom: spacing.sm, gap: 6 },
+  hinglishPromptText: { fontSize: 12, lineHeight: 16, color: colors.muted },
   toggle: { alignSelf: 'flex-start', marginTop: 4 },
   toggleText: { fontSize: 12, textDecorationLine: 'underline' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 3 },

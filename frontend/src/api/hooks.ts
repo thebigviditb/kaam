@@ -72,7 +72,12 @@ export function useUpdateMe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: UserUpdate) => api.updateMe(body),
-    onSuccess: (user) => qc.setQueryData(keys.me, user),
+    onSuccess: (user, body) => {
+      qc.setQueryData(keys.me, user);
+      // The Hinglish choice changes which messages come back with `translated_body`,
+      // so chats and connection previews must be refetched.
+      if (body.hinglish_display !== undefined) qc.invalidateQueries({ queryKey: keys.connections });
+    },
   });
 }
 

@@ -245,6 +245,9 @@ export const hi: Table = {
     'chat.showOriginal': 'मूल संदेश देखें',
     'chat.showTranslation': 'अनुवाद देखें',
     'chat.translated': 'अनुवादित',
+    'chat.hinglishPrompt': 'यह संदेश हिंग्लिश में है। इन्हें कैसे दिखाएँ?',
+    'hinglish.showEnglish': 'अंग्रेज़ी में दिखाएँ',
+    'hinglish.keepWritten': 'जैसा लिखा है वैसा रखें',
 
     'matches.welcomeCustomer': 'ये सहायक आपकी बताई ज़रूरत से मेल खाते हैं। और जानने के लिए किसी एक पर टैप करें।',
     'matches.welcomeWorker': 'ये परिवार आपके हुनर और उपलब्धता से मेल खाते हैं। और जानने के लिए किसी एक पर टैप करें।',
@@ -290,6 +293,8 @@ export const hi: Table = {
       'Bay Area में घर के काम के लिए मदद चाहिए, या घर का काम ढूँढ रहे हैं? Kaam आज़माएँ: कुक, सफ़ाई, आया और बुज़ुर्गों की देखभाल, अंग्रेज़ी या हिंदी में। अपने फ़ोन नंबर से साइन अप करें: {link}',
     'settings.title': 'सेटिंग',
     'settings.account': 'खाता',
+    'settings.hinglish': 'हिंग्लिश संदेश',
+    'settings.hinglishHint': 'हिंग्लिश अंग्रेज़ी अक्षरों में लिखी हिंदी है।',
     'settings.role': 'खाते का प्रकार',
     'settings.logOut': 'लॉग आउट',
     'settings.confirmLogOut': 'काम से लॉग आउट करें?',

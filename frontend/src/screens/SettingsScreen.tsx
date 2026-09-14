@@ -7,6 +7,7 @@ import { useMe, useRestoreMe, useUpdateMe } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthContext';
 import { DeleteAccountModal } from '@/components/DeleteAccountModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { HinglishDisplayToggle } from '@/components/HinglishDisplayToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { ShareButton } from '@/components/ShareButton';
 import { confirm } from '@/components/notify';
@@ -64,6 +65,17 @@ export function SettingsScreen() {
       <FeedbackModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} page="settings" />
       <Section title={t('common.language')}>
         <LanguageToggle onChange={(l) => updateMe.mutate({ preferred_language: l })} />
+        {lang === 'en' && me.data ? (
+          <View style={s.hinglishRow} testID="hinglish-setting">
+            <Text style={text.label}>{t('settings.hinglish')}</Text>
+            <HinglishDisplayToggle
+              value={me.data.hinglish_display ?? null}
+              onChange={(v) => updateMe.mutate({ hinglish_display: v })}
+              disabled={updateMe.isPending}
+            />
+            <Text style={text.small}>{t('settings.hinglishHint')}</Text>
+          </View>
+        ) : null}
       </Section>
       <Section title={t('settings.account')}>
         <Card>
@@ -121,6 +133,7 @@ export function SettingsScreen() {
 const s = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
   shareCard: { gap: spacing.sm },
+  hinglishRow: { marginTop: spacing.md, gap: spacing.xs },
   dangerZone: {
     marginTop: spacing.xl,
     paddingTop: spacing.md,

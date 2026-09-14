@@ -243,6 +243,9 @@ export const en = {
     'chat.showOriginal': 'Show original',
     'chat.showTranslation': 'Show translation',
     'chat.translated': 'Translated',
+    'chat.hinglishPrompt': 'This message is in Hinglish. How should we show these?',
+    'hinglish.showEnglish': 'Show in English',
+    'hinglish.keepWritten': 'Keep as written',
 
     'matches.welcomeCustomer': 'These helpers match what you told us. Tap one to learn more.',
     'matches.welcomeWorker': 'These households match your skills and availability. Tap one to learn more.',
@@ -288,6 +291,8 @@ export const en = {
       'Looking for household help, or for household work, in the Bay Area? Try Kaam: cooks, cleaners, nannies and elder care, in English or Hindi. Sign up with your phone number: {link}',
     'settings.title': 'Settings',
     'settings.account': 'Account',
+    'settings.hinglish': 'Hinglish messages',
+    'settings.hinglishHint': 'Hinglish is Hindi written in English letters.',
     'settings.role': 'Account type',
     'settings.logOut': 'Log out',
     'settings.confirmLogOut': 'Log out of Kaam?',

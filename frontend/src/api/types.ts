@@ -2,6 +2,10 @@
 
 export type Role = 'worker' | 'customer';
 export type Language = 'en' | 'hi';
+/** Detected language of a chat message. 'hinglish' is Hindi written in Latin letters. */
+export type MessageLang = 'en' | 'hi' | 'hinglish';
+/** How an English-language reader wants Hinglish messages shown; null = never chosen. */
+export type HinglishDisplay = 'original' | 'english';
 export type PayType = 'hourly' | 'daily' | 'monthly' | 'one_time';
 export type StartTiming = 'asap' | 'within_2_weeks' | 'within_month' | 'flexible';
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
@@ -28,6 +32,8 @@ export type User = {
   referral_code: string;
   /** When set, the account is scheduled to be purged at this time (ISO datetime); POST /me/restore cancels. */
   deletion_scheduled_for: string | null;
+  /** English readers only: show Hinglish messages translated ('english') or as written ('original'). */
+  hinglish_display: HinglishDisplay | null;
 };
 
 export type UserCreate = {
@@ -41,6 +47,7 @@ export type UserCreate = {
 export type UserUpdate = {
   phone?: string;
   preferred_language?: Language;
+  hinglish_display?: HinglishDisplay;
 };
 
 // ---- media ----
@@ -147,7 +154,7 @@ export type LastMessage = {
   body: string;
   created_at: string;
   /** Detected language of `body`; null when unknown. */
-  lang: Language | null;
+  lang: MessageLang | null;
   /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
   translated_body: string | null;
 };
@@ -175,7 +182,7 @@ export type ChatMessage = {
   body: string;
   created_at: string;
   /** Detected language of `body`; null when unknown. */
-  lang: Language | null;
+  lang: MessageLang | null;
   /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
   translated_body: string | null;
 };

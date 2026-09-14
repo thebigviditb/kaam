@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -182,7 +184,12 @@ def list_messages(
     if after:
         anchor = db.get(Message, after)
         if anchor is not None and anchor.connection_id == c.id:
-            q = q.filter(Message.created_at > anchor.created_at)
+            # Overlap by a few seconds so a message committed just before the anchor
+            # (a race between two senders) is never skipped; the client dedupes by id.
+            q = q.filter(
+                Message.created_at > anchor.created_at - timedelta(seconds=10),
+                Message.id != anchor.id,
+            )
     viewer_lang = _viewer_lang(user, lang)
     return [message_out(m, viewer_lang) for m in q.order_by(Message.created_at.asc()).limit(limit)]
 

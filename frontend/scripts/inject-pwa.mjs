@@ -14,6 +14,12 @@ const tags = `
     <meta name="apple-mobile-web-app-title" content="Kaam" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kaam" />
+    <meta property="og:title" content="Kaam — household help in the Bay Area" />
+    <meta property="og:description" content="Cooks, cleaners, nannies and elder care. Find work or find help, in English or Hindi. Sign up with your phone number." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />`;
 
 if (!html.includes('rel="manifest"')) {

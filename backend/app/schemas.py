@@ -220,6 +220,8 @@ class ChatMessage(ORM):
     connection_id: str
     sender_id: str
     body: str
+    lang: Language | None = None
+    translated_body: str | None = None
     created_at: datetime
 
 

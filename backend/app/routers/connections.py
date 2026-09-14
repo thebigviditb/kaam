@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from app import translate as tr
 from app.db import get_db
 from app.deps import get_current_user
 from app.models import Connection, CustomerProfile, Message, User, WorkerProfile, now
@@ -17,11 +18,27 @@ from app.schemas import (
 router = APIRouter(prefix="/connections", tags=["connections"])
 
 
+def _viewer_lang(viewer: User, lang: str | None) -> str:
+    return lang if lang in tr.LANGS else (viewer.preferred_language or "en")
+
+
+def message_out(m: Message, viewer_lang: str) -> ChatMessage:
+    """The message plus, when it isn't already in the viewer's language, a translation."""
+    out = ChatMessage.model_validate(m)
+    if m.translations and m.lang and m.lang != viewer_lang:
+        t = m.translations.get(viewer_lang)
+        if t and t.strip() != m.body.strip():
+            out.translated_body = t
+    return out
+
+
 def _my_last_read(c: Connection, viewer: User):
     return c.worker_last_read_at if viewer.id == c.worker_id else c.customer_last_read_at
 
 
-def _out(c: Connection, viewer: User, db: Session | None = None) -> ConnectionOut:
+def _out(
+    c: Connection, viewer: User, db: Session | None = None, lang: str | None = None
+) -> ConnectionOut:
     out = ConnectionOut(
         id=c.id,
         customer_id=c.customer_id,
@@ -38,7 +55,7 @@ def _out(c: Connection, viewer: User, db: Session | None = None) -> ConnectionOu
             .order_by(Message.created_at.desc())
             .first()
         )
-        out.last_message = ChatMessage.model_validate(last) if last else None
+        out.last_message = message_out(last, _viewer_lang(viewer, lang)) if last else None
         unread = db.query(func.count(Message.id)).filter(
             Message.connection_id == c.id, Message.sender_id != viewer.id
         )
@@ -99,10 +116,14 @@ def create(
 
 
 @router.get("/me", response_model=list[ConnectionOut])
-def mine(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def mine(
+    lang: str | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     col = Connection.worker_id if user.role == "worker" else Connection.customer_id
     rows = _load(db).filter(col == user.id).order_by(Connection.updated_at.desc()).all()
-    return [_out(c, user, db) for c in rows]
+    return [_out(c, user, db, lang) for c in rows]
 
 
 @router.patch("/{connection_id}", response_model=ConnectionOut)
@@ -151,6 +172,7 @@ def _chat_connection(db: Session, connection_id: str, user: User) -> Connection:
 def list_messages(
     connection_id: str,
     after: str | None = None,
+    lang: str | None = None,
     limit: int = Query(default=100, le=500),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -161,7 +183,8 @@ def list_messages(
         anchor = db.get(Message, after)
         if anchor is not None and anchor.connection_id == c.id:
             q = q.filter(Message.created_at > anchor.created_at)
-    return q.order_by(Message.created_at.asc()).limit(limit).all()
+    viewer_lang = _viewer_lang(user, lang)
+    return [message_out(m, viewer_lang) for m in q.order_by(Message.created_at.asc()).limit(limit)]
 
 
 @router.post(
@@ -175,6 +198,10 @@ def send_message(
 ):
     c = _chat_connection(db, connection_id, user)
     m = Message(connection_id=c.id, sender_id=user.id, body=body.body.strip())
+    t = tr.translate(m.body)
+    if t is not None:
+        m.lang = t.lang
+        m.translations = {"en": t.en, "hi": t.hi}
     c.updated_at = now()
     # Sending implies you've seen everything so far.
     if user.id == c.worker_id:
@@ -184,7 +211,7 @@ def send_message(
     db.add(m)
     db.commit()
     db.refresh(m)
-    return m
+    return message_out(m, _viewer_lang(user, None))
 
 
 @router.post("/{connection_id}/read", status_code=status.HTTP_204_NO_CONTENT)

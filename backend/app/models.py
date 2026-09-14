@@ -137,6 +137,8 @@ class Message(Base):
     connection_id: Mapped[str] = mapped_column(String(36), ForeignKey("connections.id"), index=True)
     sender_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     body: Mapped[str] = mapped_column(Text)
+    lang: Mapped[str | None] = mapped_column(String(8))
+    translations: Mapped[dict | None] = mapped_column(JSON)  # {"en": ..., "hi": ...}
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
 
     connection: Mapped[Connection] = relationship(back_populates="messages")

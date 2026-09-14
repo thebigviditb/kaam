@@ -291,6 +291,17 @@ export const en = {
     'settings.role': 'Account type',
     'settings.logOut': 'Log out',
     'settings.confirmLogOut': 'Log out of Kaam?',
+    'deleteAccount.title': 'Delete account',
+    'deleteAccount.hint': 'Your account and profile will be deleted after 30 days. Signing in again before then cancels it.',
+    'deleteAccount.button': 'Delete my account',
+    'deleteAccount.confirmTitle': 'Delete your account?',
+    'deleteAccount.confirmBody':
+      'Your account and profile will be deleted after 30 days. Signing in again before then cancels it.',
+    'deleteAccount.confirmYes': 'Yes, delete',
+    'deleteAccount.scheduledToast': 'Account scheduled for deletion.',
+    'deleteAccount.scheduled': 'Your account is scheduled for deletion on {date}.',
+    'deleteAccount.keep': 'Keep my account',
+    'deleteAccount.restoredBanner': 'Welcome back! Your account deletion has been cancelled.',
 
     'city.placeholder': 'Type a city',
     'city.addPlaceholder': 'Type a city and press Add',

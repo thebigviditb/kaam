@@ -4,14 +4,15 @@ import '@/auth/amplify';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useMe, useRefreshTranslationsOnLangChange } from '@/api/hooks';
+import { useMe, useRefreshTranslationsOnLangChange, useRestoreMe } from '@/api/hooks';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ErrorView } from '@/components/ui';
 import { I18nProvider, useI18n } from '@/i18n';
+import { accountRestore } from '@/lib/accountRestore';
 import { captureReferralFromUrl } from '@/lib/referral';
 import { colors } from '@/theme';
 
@@ -62,6 +63,8 @@ function Gate() {
     if (serverLang) setLang(serverLang);
   }, [serverLang, setLang]);
 
+  useRestoreOnSignIn(status, me.isSuccess, me.data?.deletion_scheduled_for ?? null);
+
   const meLoading = status === 'signedIn' && me.isPending;
   const booting = !ready || status === 'loading' || meLoading;
 
@@ -103,6 +106,29 @@ function Gate() {
       ) : null}
     </View>
   );
+}
+
+/**
+ * A signed-in user whose account is scheduled for deletion has come back: cancel it once and
+ * queue the "Welcome back" banner on Matches. Only the first successful /me load after a
+ * sign-in is inspected, so a delete request made in this session (which also writes the flag
+ * into the cache right before signing out) can't trigger a restore, and a failed restore does
+ * not retry (Settings offers "Keep my account").
+ */
+function useRestoreOnSignIn(status: string, loaded: boolean, scheduledFor: string | null) {
+  const restore = useRestoreMe();
+  const checked = useRef(false);
+  const restoreMut = restore.mutate;
+  useEffect(() => {
+    if (status !== 'signedIn') {
+      checked.current = false;
+      accountRestore.set(false);
+      return;
+    }
+    if (!loaded || checked.current) return;
+    checked.current = true;
+    if (scheduledFor) restoreMut(undefined, { onSuccess: () => accountRestore.set(true) });
+  }, [status, loaded, scheduledFor, restoreMut]);
 }
 
 const s = StyleSheet.create({

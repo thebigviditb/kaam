@@ -9,6 +9,7 @@ import { CustomerCard, WorkerCard } from '@/components/cards';
 import { ShareBanner } from '@/components/ShareBanner';
 import { EmptyState, ErrorView, Loading, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
+import { accountRestore, useAccountRestored } from '@/lib/accountRestore';
 import { colors, radius, spacing, text } from '@/theme';
 
 const BANNER_KEY = 'kaam.matchesWelcome';
@@ -37,6 +38,26 @@ function WelcomeBanner({ message }: { message: string }) {
       <Ionicons name="sparkles" size={18} color={colors.accent} />
       <Text style={[text.body, { flex: 1 }]}>{message}</Text>
       <Pressable onPress={dismiss} accessibilityRole="button" accessibilityLabel={t('matches.dismiss')} hitSlop={8}>
+        <Text style={s.dismiss}>{t('matches.dismiss')}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** "Welcome back! Your account deletion has been cancelled." after a sign-in that undid a delete request. */
+function RestoredBanner() {
+  const { t } = useI18n();
+  const show = useAccountRestored();
+  if (!show) return null;
+  return (
+    <View style={s.banner} accessibilityRole="alert" testID="restored-banner">
+      <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+      <Text style={[text.body, { flex: 1 }]}>{t('deleteAccount.restoredBanner')}</Text>
+      <Pressable
+        onPress={() => accountRestore.set(false)}
+        accessibilityRole="button"
+        accessibilityLabel={t('matches.dismiss')}
+        hitSlop={8}>
         <Text style={s.dismiss}>{t('matches.dismiss')}</Text>
       </Pressable>
     </View>
@@ -94,6 +115,7 @@ export function WorkerMatches() {
   const q = useMatchingCustomers();
   return (
     <Screen title={t('matches.workerTitle')} subtitle={t('matches.workerHint')}>
+      <RestoredBanner />
       <ShareBanner role="worker" />
       <ProfileBasis />
       <WelcomeBanner message={t('matches.welcomeWorker')} />
@@ -124,6 +146,7 @@ export function CustomerMatches() {
   const q = useMatchingWorkers();
   return (
     <Screen title={t('matches.customerTitle')} subtitle={t('matches.customerHint')}>
+      <RestoredBanner />
       <ShareBanner role="customer" />
       <CustomerProfileBasis />
       <WelcomeBanner message={t('matches.welcomeCustomer')} />

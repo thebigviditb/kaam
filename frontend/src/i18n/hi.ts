@@ -293,6 +293,17 @@ export const hi: Table = {
     'settings.role': 'खाते का प्रकार',
     'settings.logOut': 'लॉग आउट',
     'settings.confirmLogOut': 'काम से लॉग आउट करें?',
+    'deleteAccount.title': 'खाता हटाएँ',
+    'deleteAccount.hint': 'आपका खाता और प्रोफ़ाइल 30 दिन बाद हटा दिए जाएँगे। उससे पहले दोबारा साइन इन करने पर यह रद्द हो जाता है।',
+    'deleteAccount.button': 'मेरा खाता हटाएँ',
+    'deleteAccount.confirmTitle': 'अपना खाता हटाएँ?',
+    'deleteAccount.confirmBody':
+      'आपका खाता और प्रोफ़ाइल 30 दिन बाद हटा दिए जाएँगे। उससे पहले दोबारा साइन इन करने पर यह रद्द हो जाता है।',
+    'deleteAccount.confirmYes': 'हाँ, हटाएँ',
+    'deleteAccount.scheduledToast': 'खाता हटाने के लिए निर्धारित कर दिया गया।',
+    'deleteAccount.scheduled': 'आपका खाता {date} को हटाने के लिए निर्धारित है।',
+    'deleteAccount.keep': 'मेरा खाता रखें',
+    'deleteAccount.restoredBanner': 'वापसी पर स्वागत है! आपके खाते को हटाना रद्द कर दिया गया है।',
 
     'city.placeholder': 'शहर लिखें',
     'city.addPlaceholder': 'शहर लिखें और जोड़ें दबाएँ',

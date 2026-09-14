@@ -3,13 +3,31 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Connection, Report, User
-from app.schemas import ReportIn, ReportOut
+from app.models import Connection, Feedback, Report, User
+from app.schemas import FeedbackIn, FeedbackOut, ReportIn, ReportOut
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(tags=["reports"])
+feedback_router = APIRouter(tags=["feedback"])
 
 
-@router.post("", response_model=ReportOut, status_code=status.HTTP_201_CREATED)
+@feedback_router.post("/feedback", response_model=FeedbackOut, status_code=status.HTTP_201_CREATED)
+def create_feedback(
+    body: FeedbackIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    f = Feedback(
+        user_id=user.id,
+        category=body.category,
+        message=body.message.strip(),
+        contact=(body.contact or "").strip() or None,
+        page=body.page,
+    )
+    db.add(f)
+    db.commit()
+    db.refresh(f)
+    return FeedbackOut(id=f.id, created_at=f.created_at)
+
+
+@router.post("/reports", response_model=ReportOut, status_code=status.HTTP_201_CREATED)
 def create_report(
     body: ReportIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):

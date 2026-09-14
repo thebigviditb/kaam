@@ -168,3 +168,17 @@ class Report(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(16), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class Feedback(Base):
+    """Free-form feedback sent from Settings."""
+
+    __tablename__ = "feedback"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    category: Mapped[str] = mapped_column(String(16), default="other")
+    message: Mapped[str] = mapped_column(Text)
+    contact: Mapped[str | None] = mapped_column(String(120))
+    page: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

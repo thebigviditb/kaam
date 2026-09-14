@@ -49,11 +49,12 @@ def test_validation(client, worker, customer):
         client.put("/workers/me", json={**WORKER_PROFILE, "days": []}, headers=WORKER).status_code
         == 422
     )
+    # Any city is accepted (normalized)
     assert (
         client.put(
             "/customers/me", json={**CUSTOMER_PROFILE, "city": "Delhi"}, headers=CUSTOMER
         ).status_code
-        == 422
+        == 200
     )
     assert (
         client.put(
@@ -155,7 +156,7 @@ def test_worker_city_validation(client, worker):
         client.put(
             "/workers/me", json={**WORKER_PROFILE, "work_cities": ["Delhi"]}, headers=WORKER
         ).status_code
-        == 422
+        == 200
     )
     r = client.get("/workers/me", headers=WORKER).json()
     assert r["city"] == "Fremont" and r["work_cities"] == ["Fremont", "Newark"]

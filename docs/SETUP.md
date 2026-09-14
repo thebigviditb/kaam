@@ -106,6 +106,7 @@ preview deploy is a staging deploy.
 | MEDIA_AWS_ACCESS_KEY_ID / MEDIA_AWS_SECRET_ACCESS_KEY | from `create-access-key` (Vercel reserves the plain AWS_* names) |
 | MEDIA_AWS_REGION | us-west-2 |
 | CORS_ORIGINS | `https://kaam-web-tau.vercel.app` (prod) / `https://kaam-web-staging.vercel.app` (staging) |
+| ANTHROPIC_API_KEY | Anthropic API key used for chat translation (create one for Kaam at console.anthropic.com) |
 
 **kaam-web**
 

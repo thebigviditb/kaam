@@ -10,6 +10,7 @@ import type {
   CustomerProfileIn,
   FeedbackCreate,
   FeedbackOut,
+  Language,
   Media,
   MediaRegister,
   Meta,
@@ -71,15 +72,17 @@ export const api = {
   // connections
   createConnection: (body: ConnectionCreate) =>
     request<Connection>('POST', '/connections', { body }),
-  myConnections: () => request<Connection[]>('GET', '/connections/me'),
+  /** `lang` overrides the stored preference for `last_message.translated_body`. */
+  myConnections: (lang?: Language) => request<Connection[]>('GET', '/connections/me', { query: { lang } }),
   decideConnection: (id: string, body: ConnectionDecision) =>
     request<Connection>('PATCH', `/connections/${id}`, { body }),
   withdrawConnection: (id: string) => request<void>('DELETE', `/connections/${id}`),
 
   // chat (accepted connections only)
-  listMessages: (connectionId: string, after?: string, limit = 100) =>
+  /** `lang` overrides the stored preference for `translated_body`. */
+  listMessages: (connectionId: string, { after, lang, limit = 100 }: { after?: string; lang?: Language; limit?: number } = {}) =>
     request<ChatMessage[]>('GET', `/connections/${connectionId}/messages`, {
-      query: { after, limit },
+      query: { after, lang, limit },
     }),
   sendMessage: (connectionId: string, body: ChatMessageCreate) =>
     request<ChatMessage>('POST', `/connections/${connectionId}/messages`, { body }),

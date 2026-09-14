@@ -79,7 +79,7 @@ for audio streaming. Nothing in the web app has to change for that.
 | worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city (home), work_cities[], days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
 | connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
-| messages         | id, connection_id, sender_id, body, created_at |
+| messages         | id, connection_id, sender_id, body, lang (detected), translations {en, hi}, created_at |
 | reports          | id, reporter_id, reported_user_id, connection_id?, reason, description, status |
 | feedback         | id, user_id, category (bug/idea/other), message, contact?, page? |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
@@ -105,6 +105,8 @@ GET/PUT /customers/me       GET /customers?tags=&days=&times=&city=&min_pay=&pay
 GET /customers/matching     GET /customers/{id}      ← the voice agent's "what work is there for me?"
 POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
 GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
+  Messages are translated EN<->HI on send by Claude (claude-opus-5, structured JSON, cached on
+  the row) and served in the viewer's language (`?lang=`), with the original available.
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
 POST /feedback              (Settings → Send feedback)
 POST /media/presign         POST /media              DELETE /media/{id}

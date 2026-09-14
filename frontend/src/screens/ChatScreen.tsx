@@ -86,6 +86,16 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  // Ids of translated messages the reader has flipped to the original text.
+  const [showingOriginal, setShowingOriginal] = useState<Set<string>>(() => new Set());
+  const toggleOriginal = useCallback((id: string) => {
+    setShowingOriginal((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -200,7 +210,14 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
                     <Text style={s.dayLabel}>{formatDayLabel(g.date, lang, t)}</Text>
                   </View>
                   {g.items.map((m) => (
-                    <Bubble key={m.id} m={m} mine={m.sender_id === myId} lang={lang} />
+                    <Bubble
+                      key={m.id}
+                      m={m}
+                      mine={m.sender_id === myId}
+                      lang={lang}
+                      original={showingOriginal.has(m.id)}
+                      onToggleOriginal={toggleOriginal}
+                    />
                   ))}
                 </View>
               ))
@@ -252,13 +269,49 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   );
 }
 
-function Bubble({ m, mine, lang }: { m: ChatMessage; mine: boolean; lang: string }) {
+/**
+ * One message. When the server supplied `translated_body` (the message in the
+ * reader's language) that is shown by default with a "Translated" tag and a
+ * link to flip to the original; optimistic sends never have one.
+ */
+function Bubble({
+  m,
+  mine,
+  lang,
+  original,
+  onToggleOriginal,
+}: {
+  m: ChatMessage;
+  mine: boolean;
+  lang: string;
+  original: boolean;
+  onToggleOriginal: (id: string) => void;
+}) {
+  const { t } = useI18n();
   const pending = m.id.startsWith('tmp-');
+  const translated = !pending && typeof m.translated_body === 'string' && m.translated_body.length > 0;
+  const showTranslation = translated && !original;
+  const bodyText = showTranslation ? (m.translated_body as string) : m.body;
+  const metaColor = mine ? s.timeMine : s.timeTheirs;
   return (
     <View style={[s.bubbleRow, mine ? s.bubbleRowMine : s.bubbleRowTheirs]}>
       <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleTheirs, pending && { opacity: 0.6 }]}>
-        <Text style={[s.bubbleText, mine && { color: colors.accentText }]}>{m.body}</Text>
-        <Text style={[s.time, mine ? s.timeMine : s.timeTheirs]}>{formatTime(parseServerDate(m.created_at), lang)}</Text>
+        <Text style={[s.bubbleText, mine && { color: colors.accentText }]}>{bodyText}</Text>
+        {translated ? (
+          <Pressable
+            onPress={() => onToggleOriginal(m.id)}
+            accessibilityRole="button"
+            hitSlop={6}
+            style={({ pressed }) => [s.toggle, pressed && { opacity: 0.6 }]}>
+            <Text style={[s.toggleText, metaColor]}>
+              {showTranslation ? t('chat.showOriginal') : t('chat.showTranslation')}
+            </Text>
+          </Pressable>
+        ) : null}
+        <View style={s.metaRow}>
+          {showTranslation ? <Text style={[s.translatedTag, metaColor]}>{t('chat.translated')}</Text> : null}
+          <Text style={[s.time, metaColor]}>{formatTime(parseServerDate(m.created_at), lang)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -327,7 +380,11 @@ const s = StyleSheet.create({
   bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, lineHeight: 21, color: colors.text },
-  time: { fontSize: 11, marginTop: 3, alignSelf: 'flex-end' },
+  toggle: { alignSelf: 'flex-start', marginTop: 4 },
+  toggleText: { fontSize: 12, textDecorationLine: 'underline' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 3 },
+  translatedTag: { fontSize: 10, fontStyle: 'italic' },
+  time: { fontSize: 11 },
   timeMine: { color: 'rgba(255,255,255,0.8)' },
   timeTheirs: { color: colors.muted },
   composer: {

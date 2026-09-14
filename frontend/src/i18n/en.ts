@@ -240,6 +240,9 @@ export const en = {
     'chat.minutesAgo': '{n}m',
     'chat.hoursAgo': '{n}h',
     'chat.daysAgo': '{n}d',
+    'chat.showOriginal': 'Show original',
+    'chat.showTranslation': 'Show translation',
+    'chat.translated': 'Translated',
 
     'matches.welcomeCustomer': 'These helpers match what you told us. Tap one to learn more.',
     'matches.welcomeWorker': 'These households match your skills and availability. Tap one to learn more.',

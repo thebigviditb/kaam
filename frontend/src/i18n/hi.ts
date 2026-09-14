@@ -242,6 +242,9 @@ export const hi: Table = {
     'chat.minutesAgo': '{n} मि',
     'chat.hoursAgo': '{n} घं',
     'chat.daysAgo': '{n} दिन',
+    'chat.showOriginal': 'मूल संदेश देखें',
+    'chat.showTranslation': 'अनुवाद देखें',
+    'chat.translated': 'अनुवादित',
 
     'matches.welcomeCustomer': 'ये सहायक आपकी बताई ज़रूरत से मेल खाते हैं। और जानने के लिए किसी एक पर टैप करें।',
     'matches.welcomeWorker': 'ये परिवार आपके हुनर और उपलब्धता से मेल खाते हैं। और जानने के लिए किसी एक पर टैप करें।',

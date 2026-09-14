@@ -144,6 +144,10 @@ export type LastMessage = {
   sender_id: string;
   body: string;
   created_at: string;
+  /** Detected language of `body`; null when unknown. */
+  lang: Language | null;
+  /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
+  translated_body: string | null;
 };
 
 export type Connection = {
@@ -168,6 +172,10 @@ export type ChatMessage = {
   sender_id: string;
   body: string;
   created_at: string;
+  /** Detected language of `body`; null when unknown. */
+  lang: Language | null;
+  /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
+  translated_body: string | null;
 };
 
 export type ChatMessageCreate = { body: string };

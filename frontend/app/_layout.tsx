@@ -8,7 +8,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useMe } from '@/api/hooks';
+import { useMe, useRefreshTranslationsOnLangChange } from '@/api/hooks';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ErrorView } from '@/components/ui';
 import { I18nProvider, useI18n } from '@/i18n';
@@ -50,6 +50,7 @@ function Gate() {
   const { status } = useAuth();
   const me = useMe();
   const { ready, setLang, t } = useI18n();
+  useRefreshTranslationsOnLangChange();
   const segments = useSegments();
   const router = useRouter();
 

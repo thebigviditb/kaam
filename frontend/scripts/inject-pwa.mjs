@@ -2,6 +2,16 @@
 // (Expo's `web.output: "single"` ignores app/+html.tsx.)
 import { readFileSync, writeFileSync } from 'node:fs';
 
+// Absolute URLs are required for link previews (WhatsApp, iMessage). Vercel exposes the
+// deployment host at build time; fall back to production.
+const host =
+  process.env.EXPO_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_ENV === 'production' && process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_ENV === 'preview'
+      ? 'https://kaam-web-staging.vercel.app'
+      : 'https://kaam-web-tau.vercel.app');
+
 const file = new URL('../dist/index.html', import.meta.url);
 let html = readFileSync(file, 'utf8');
 
@@ -18,7 +28,8 @@ const tags = `
     <meta property="og:site_name" content="Kaam" />
     <meta property="og:title" content="Kaam — household help in the Bay Area" />
     <meta property="og:description" content="Cooks, cleaners, nannies and elder care. Find work or find help, in English or Hindi. Sign up with your phone number." />
-    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:url" content="${host}/" />
+    <meta property="og:image" content="${host}/icons/icon-512.png" />
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />`;
 

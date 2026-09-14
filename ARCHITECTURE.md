@@ -107,6 +107,9 @@ POST /connections           GET /connections/me      PATCH /connections/{id}   D
 GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
   Messages are translated EN<->HI on send by Claude (claude-opus-5, structured JSON, cached on
   the row) and served in the viewer's language (`?lang=`), with the original available.
+  Detected `lang` is en / hi / hinglish. Hindi readers always get Devanagari Hindi. English
+  readers get Hinglish as written unless `users.hinglish_display = "english"` (the chat asks
+  once under the first Hinglish message; changeable in Settings under Language).
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
 POST /feedback              (Settings → Send feedback)
 POST /me/delete  POST /me/restore   (30-day grace; a newer sign-in token auto-restores)

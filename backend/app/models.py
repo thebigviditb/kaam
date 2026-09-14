@@ -46,6 +46,7 @@ class User(Base):
         String(12), unique=True, index=True, default=new_referral_code
     )
     referred_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(

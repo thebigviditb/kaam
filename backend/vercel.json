@@ -1,3 +1,9 @@
 {
-  "framework": "fastapi"
+  "framework": "fastapi",
+  "crons": [
+    {
+      "path": "/internal/purge-deleted-accounts",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }

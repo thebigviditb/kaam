@@ -133,6 +133,12 @@ class KaamStack(cdk.Stack):
         api_user = iam.User(self, "ApiUser", user_name=f"kaam-{env_name}-api")
         bucket.grant_read_write(api_user)
         bucket.grant_delete(api_user)
+        # Account deletion: the API removes the Cognito user after the grace period.
+        api_user.add_to_policy(
+            iam.PolicyStatement(
+                actions=["cognito-idp:AdminDeleteUser"], resources=[pool.user_pool_arn]
+            )
+        )
 
         cdk.CfnOutput(self, "UserPoolId", value=pool.user_pool_id)
         cdk.CfnOutput(self, "UserPoolClientId", value=client.user_pool_client_id)

@@ -62,6 +62,7 @@ class UserOut(ORM):
     referral_code: str
     created_at: datetime
     onboarded: bool = False
+    deletion_scheduled_for: datetime | None = None
 
 
 class UserCreate(BaseModel):

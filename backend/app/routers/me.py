@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app import account
 from app.auth import Claims, get_claims
 from app.config import Settings, get_settings
 from app.constants import CITIES, DAYS, PAY_TYPES, REPORT_REASONS, START_TIMINGS, TAGS, TIMES
@@ -19,6 +20,7 @@ def user_out(user: User) -> UserOut:
         if user.role == "worker"
         else user.customer_profile is not None
     )
+    out.deletion_scheduled_for = account.scheduled_for(user)
     return out
 
 
@@ -81,3 +83,28 @@ def update_me(
     db.commit()
     db.refresh(user)
     return user_out(user)
+
+
+@router.post("/me/delete", response_model=UserOut)
+def request_account_deletion(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Schedule deletion after the grace period and hide the profile. Signing in again cancels."""
+    account.request_deletion(db, user)
+    return user_out(user)
+
+
+@router.post("/me/restore", response_model=UserOut)
+def cancel_account_deletion(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    account.restore_account(db, user)
+    return user_out(user)
+
+
+@router.get("/internal/purge-deleted-accounts")
+def purge_deleted_accounts(
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """Daily cron (Vercel sends `Authorization: Bearer <CRON_SECRET>`)."""
+    if not settings.cron_secret or authorization != f"Bearer {settings.cron_secret}":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "cron secret required")
+    return {"purged": account.purge_due(db)}

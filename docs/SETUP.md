@@ -60,7 +60,13 @@ wait for a cold start or touch the function configuration to restart them.
 While the Twilio account is on trial, Verify only delivers to numbers verified in the Twilio
 console (Phone Numbers → Verified Caller IDs). Upgrading the account removes that limit.
 
-### Email codes (SES)
+### Email codes (SES) — no longer used for login
+
+Login is phone-only since 2026-09-15. SES stays configured (sender `vidit@intensionapp.com`)
+for future transactional email, but nothing depends on it today, and the SES production
+access case is not blocking anything.
+
+#### Historical note
 
 Cognito only sends login-code emails through Amazon SES, and Gmail discards SES mail that
 claims to be "from" a gmail.com address. The pools therefore send as

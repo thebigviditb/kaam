@@ -44,10 +44,10 @@ for audio streaming. Nothing in the web app has to change for that.
   `aws-amplify` Auth (works on web and native).
 - **Language:** i18n with English and Hindi. A **Settings** screen has a language
   picker; the choice is saved on the device and on the user record.
-- **Auth is passwordless.** Workers sign up and log in with a phone number and a
-  texted code. Households can use phone or email. No passwords anywhere.
+- **Auth is passwordless and phone-only.** Everyone signs up and logs in with a phone
+  number and a texted code (Cognito custom auth + Twilio Verify). No passwords, no email.
 - **Screens (v1):**
-  - Welcome → pick Worker / Household → phone (or email) → code → registered
+  - Welcome → pick Worker / Household → phone → code → registered
   - **Onboarding wizard**, one question per screen:
     - Household: name + city → what work (tags + Other) → when needed (asap / 2 weeks /
       month / flexible) → which days + time of day → expected pay + description

@@ -5,7 +5,6 @@ TAGS = [
     "dusting",
     "dishes",
     "ironing",
-    "caretaker",
     "grocery",
     "other",
 ]

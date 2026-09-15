@@ -27,7 +27,7 @@ const tags = `
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Kaam" />
     <meta property="og:title" content="Kaam: household help in the Bay Area" />
-    <meta property="og:description" content="Cooks, cleaners and caretakers. Find work or find help, in English or Hindi. Sign up with your phone number." />
+    <meta property="og:description" content="Cooks, cleaners and more. Find work or find help, in English or Hindi. Sign up with your phone number." />
     <meta property="og:url" content="${host}/" />
     <meta property="og:image" content="${host}/icons/icon-512.png" />
     <meta name="twitter:card" content="summary" />

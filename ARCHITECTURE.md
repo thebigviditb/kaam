@@ -1,6 +1,6 @@
 # Kaam — Architecture
 
-Kaam is a marketplace connecting domestic workers (cooks, cleaners, nannies, etc.)
+Kaam is a marketplace connecting domestic workers (cooks, cleaners, caretakers, etc.)
 in the Bay Area with households that need help. Both sides answer a short onboarding
 questionnaire (what work, when, and for households, where and what pay), the app ranks
 matches, and either side can reach out. Once the other side accepts, phone numbers are
@@ -90,7 +90,7 @@ days + shared time slots; zero shared tags, or a household city the worker doesn
 (`work_cities` + home city), means no match.
 
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
-dishes, ironing, childcare, elder_care, grocery, other.
+dishes, ironing, caretaker, grocery, other.
 
 **City:** free text, normalized (case/spacing) so "fremont" and "Fremont" match; `/meta.cities`
 is a Bay Area + California suggestion list for autocomplete, not a constraint.

@@ -77,7 +77,7 @@ def test_list_workers_filters(client, worker, customer):
     n = lambda qs: len(client.get(f"/workers?{qs}", headers=CUSTOMER).json())  # noqa: E731
     assert n("") == 1
     assert n("tags=cooking") == 1
-    assert n("tags=childcare") == 0
+    assert n("tags=caretaker") == 0
     assert n("days=sat") == 0
     assert n("days=mon&days=sat") == 1
     assert n("times=evening") == 0
@@ -106,7 +106,7 @@ def test_matching_ranks_by_overlap(client, worker, customer):
     client.post("/me", json={"role": "worker", "phone": "+15550000002"}, headers=WORKER2)
     client.put(
         "/workers/me",
-        json={**WORKER_PROFILE, "display_name": "Nanny", "tags": ["childcare"]},
+        json={**WORKER_PROFILE, "display_name": "Nanny", "tags": ["caretaker"]},
         headers=WORKER2,
     )
     m = client.get("/workers/matching", headers=CUSTOMER).json()

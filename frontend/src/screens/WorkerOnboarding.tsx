@@ -1,13 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
 import { keys, useMeta, useUpsertWorkerProfile } from '@/api/hooks';
 import { DAYS, TIMES, type User } from '@/api/types';
 import { ChipGroup } from '@/components/Chip';
-import { Select } from '@/components/Select';
+import { CityInput, CityMultiInput, sameCityName } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading, Row } from '@/components/ui';
 import { WizardStep } from '@/components/Wizard';
@@ -37,8 +37,21 @@ export function WorkerOnboarding() {
   const [years, setYears] = useState('');
   const [rate, setRate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // The home city is usually a work city too: pre-add it as a chip (the user can remove it).
+  // When the home city changes, the chip that was auto-added for the old one follows it.
+  const autoAdded = useRef<string | null>(null);
 
   if (!meta.data) return <Loading />;
+
+  const onHomeCity = (c: string | null) => {
+    setCity(c);
+    setWorkCities((w) => {
+      const prev = autoAdded.current;
+      const rest = prev ? w.filter((x) => !sameCityName(x, prev)) : w;
+      autoAdded.current = c;
+      return c && !rest.some((x) => sameCityName(x, c)) ? [...rest, c] : rest;
+    });
+  };
 
   const next = () => {
     setError(null);
@@ -137,18 +150,10 @@ export function WorkerOnboarding() {
             next();
           }}>
           <Field label={t('onb.w.city')}>
-            <Select
-              value={city}
-              options={meta.data.cities}
-              onChange={(c) => {
-                setCity(c);
-                if (c && !workCities.includes(c)) setWorkCities((w) => [...w, c]);
-              }}
-              placeholder={t('common.city')}
-            />
+            <CityInput value={city} onChange={onHomeCity} autoFocus />
           </Field>
           <Field label={t('onb.w.workCities')} hint={t('onb.w.workCitiesHint')}>
-            <ChipGroup options={meta.data.cities} value={workCities} onChange={setWorkCities} labelFor={(v) => v} />
+            <CityMultiInput value={workCities} onChange={setWorkCities} />
           </Field>
         </WizardStep>
       );

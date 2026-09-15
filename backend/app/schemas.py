@@ -3,10 +3,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants import CITIES, DAYS, REPORT_REASONS, TAGS, TIMES
+from app.constants import DAYS, REPORT_REASONS, TAGS, TIMES
 
 Role = Literal["worker", "customer"]
 Language = Literal["en", "hi"]
+MessageLang = Literal["en", "hi", "hinglish"]
+HinglishDisplay = Literal["original", "english"]
 PayType = Literal["hourly", "daily", "monthly", "one_time"]
 StartTiming = Literal["asap", "within_2_weeks", "within_month", "flexible"]
 ConnectionStatus = Literal["pending", "accepted", "declined"]
@@ -26,13 +28,24 @@ def _subset(allowed: list[str], what: str):
 _check_tags = _subset(TAGS, "tags")
 _check_days = _subset(DAYS, "days")
 _check_times = _subset(TIMES, "times")
-_check_cities = _subset(CITIES, "cities")
+
+
+def normalize_city(city: str) -> str:
+    """Any city is allowed; normalize spacing/case so 'fremont' and 'Fremont ' match."""
+    cleaned = " ".join(city.split())
+    if not cleaned:
+        raise ValueError("city is required")
+    if len(cleaned) > 64:
+        raise ValueError("city name too long")
+    return cleaned.title() if cleaned.islower() or cleaned.isupper() else cleaned
 
 
 def _check_city(city: str) -> str:
-    if city not in CITIES:
-        raise ValueError(f"unknown city: {city}")
-    return city
+    return normalize_city(city)
+
+
+def _check_cities(cities: list[str]) -> list[str]:
+    return list(dict.fromkeys(normalize_city(c) for c in cities))
 
 
 class ORM(BaseModel):
@@ -48,19 +61,24 @@ class UserOut(ORM):
     email: str | None
     phone: str | None
     preferred_language: Language
+    referral_code: str
     created_at: datetime
     onboarded: bool = False
+    deletion_scheduled_for: datetime | None = None
+    hinglish_display: HinglishDisplay | None = None
 
 
 class UserCreate(BaseModel):
     role: Role
     phone: str = Field(min_length=7, max_length=32)
     preferred_language: Language = "en"
+    ref: str | None = Field(default=None, max_length=12)
 
 
 class UserUpdate(BaseModel):
     phone: str | None = Field(default=None, min_length=7, max_length=32)
     preferred_language: Language | None = None
+    hinglish_display: HinglishDisplay | None = None
 
 
 # ---- media ----
@@ -207,6 +225,8 @@ class ChatMessage(ORM):
     connection_id: str
     sender_id: str
     body: str
+    lang: MessageLang | None = None
+    translated_body: str | None = None
     created_at: datetime
 
 
@@ -238,6 +258,18 @@ class ReportIn(BaseModel):
 
 
 class ReportOut(BaseModel):
+    id: str
+    created_at: datetime
+
+
+class FeedbackIn(BaseModel):
+    message: str = Field(min_length=3, max_length=4000)
+    category: Literal["bug", "idea", "other"] = "other"
+    contact: str | None = Field(default=None, max_length=120)
+    page: str | None = Field(default=None, max_length=120)
+
+
+class FeedbackOut(BaseModel):
     id: str
     created_at: datetime
 

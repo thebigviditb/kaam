@@ -1,10 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { LanguageToggle } from './LanguageToggle';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
-/** The "Kaam" brand mark, always in Latin script so the name is recognizable in either language. */
+/** The "Kaam" brand mark (always Latin script) with the language switch on the right,
+ * so every sign-up / login / role screen can be flipped to Hindi. */
 export function Brand() {
   return (
     <View style={s.wrap}>
@@ -12,6 +14,8 @@ export function Brand() {
         <Text style={s.logoText}>K</Text>
       </View>
       <Text style={s.name}>Kaam</Text>
+      <View style={{ flex: 1 }} />
+      <LanguageToggle />
     </View>
   );
 }

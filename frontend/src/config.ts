@@ -3,6 +3,12 @@ export const config = {
   cognitoUserPoolId: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID ?? '',
   cognitoClientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? '',
   authDevBypass: process.env.EXPO_PUBLIC_AUTH_DEV_BYPASS === 'true',
+  /** Public origin used in share links; the current origin on web when not configured. */
+  siteUrl: (
+    process.env.EXPO_PUBLIC_SITE_URL ||
+    (typeof window !== 'undefined' && window.location?.origin) ||
+    'https://kaam-web-tau.vercel.app'
+  ).replace(/\/$/, ''),
 };
 
 // Mirrors backend/app/storage.py and backend/app/routers/media.py

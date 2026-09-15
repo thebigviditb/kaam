@@ -2,6 +2,10 @@
 
 export type Role = 'worker' | 'customer';
 export type Language = 'en' | 'hi';
+/** Detected language of a chat message. 'hinglish' is Hindi written in Latin letters. */
+export type MessageLang = 'en' | 'hi' | 'hinglish';
+/** How an English-language reader wants Hinglish messages shown; null = never chosen. */
+export type HinglishDisplay = 'original' | 'english';
 export type PayType = 'hourly' | 'daily' | 'monthly' | 'one_time';
 export type StartTiming = 'asap' | 'within_2_weeks' | 'within_month' | 'flexible';
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
@@ -24,17 +28,26 @@ export type User = {
   preferred_language: Language;
   created_at: string;
   onboarded: boolean;
+  /** Stable 6–8 char code; `?ref=<code>` on the site URL credits this user for a sign-up. */
+  referral_code: string;
+  /** When set, the account is scheduled to be purged at this time (ISO datetime); POST /me/restore cancels. */
+  deletion_scheduled_for: string | null;
+  /** English readers only: show Hinglish messages translated ('english') or as written ('original'). */
+  hinglish_display: HinglishDisplay | null;
 };
 
 export type UserCreate = {
   role: Role;
   phone: string;
   preferred_language?: Language;
+  /** The inviter's referral code (from `?ref=`); unknown codes are ignored by the server. */
+  ref?: string;
 };
 
 export type UserUpdate = {
   phone?: string;
   preferred_language?: Language;
+  hinglish_display?: HinglishDisplay;
 };
 
 // ---- media ----
@@ -140,6 +153,10 @@ export type LastMessage = {
   sender_id: string;
   body: string;
   created_at: string;
+  /** Detected language of `body`; null when unknown. */
+  lang: MessageLang | null;
+  /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
+  translated_body: string | null;
 };
 
 export type Connection = {
@@ -164,6 +181,10 @@ export type ChatMessage = {
   sender_id: string;
   body: string;
   created_at: string;
+  /** Detected language of `body`; null when unknown. */
+  lang: MessageLang | null;
+  /** `body` rendered in the viewer's language; null when already in it (or translation failed). */
+  translated_body: string | null;
 };
 
 export type ChatMessageCreate = { body: string };
@@ -197,6 +218,23 @@ export type ReportCreate = {
 };
 
 export type ReportOut = { id: string; created_at: string };
+
+// ---- feedback ----
+
+export type FeedbackCategory = 'bug' | 'idea' | 'other';
+export const FEEDBACK_CATEGORIES: FeedbackCategory[] = ['bug', 'idea', 'other'];
+
+export type FeedbackCreate = {
+  /** 3..4000 chars. */
+  message: string;
+  category: FeedbackCategory;
+  /** How to reach the sender (email/phone), max 120 chars. */
+  contact?: string;
+  /** Where the form was opened, e.g. 'settings'. */
+  page?: string;
+};
+
+export type FeedbackOut = { id: string; created_at: string };
 
 export type Meta = {
   tags: string[];

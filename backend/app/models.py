@@ -25,6 +25,14 @@ def now() -> datetime:
     return datetime.now(UTC)
 
 
+def new_referral_code() -> str:
+    """Short, shareable, unambiguous (no 0/O/1/I)."""
+    import secrets
+
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(7))
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -34,6 +42,14 @@ class User(Base):
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(32), index=True)
     preferred_language: Mapped[str] = mapped_column(String(8), default="en")
+    referral_code: Mapped[str] = mapped_column(
+        String(12), unique=True, index=True, default=new_referral_code
+    )
+    referred_by_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # For English readers: show Hinglish messages "original" (as written) or "english".
+    # None = not asked yet; the chat asks the first time.
+    hinglish_display: Mapped[str | None] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(
@@ -125,6 +141,8 @@ class Message(Base):
     connection_id: Mapped[str] = mapped_column(String(36), ForeignKey("connections.id"), index=True)
     sender_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     body: Mapped[str] = mapped_column(Text)
+    lang: Mapped[str | None] = mapped_column(String(8))
+    translations: Mapped[dict | None] = mapped_column(JSON)  # {"en": ..., "hi": ...}
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
 
     connection: Mapped[Connection] = relationship(back_populates="messages")
@@ -155,4 +173,18 @@ class Report(Base):
     reason: Mapped[str] = mapped_column(String(32))
     description: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(16), default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class Feedback(Base):
+    """Free-form feedback sent from Settings."""
+
+    __tablename__ = "feedback"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    category: Mapped[str] = mapped_column(String(16), default="other")
+    message: Mapped[str] = mapped_column(Text)
+    contact: Mapped[str | None] = mapped_column(String(120))
+    page: Mapped[str | None] = mapped_column(String(120))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

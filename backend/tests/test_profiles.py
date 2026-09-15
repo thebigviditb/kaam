@@ -49,11 +49,12 @@ def test_validation(client, worker, customer):
         client.put("/workers/me", json={**WORKER_PROFILE, "days": []}, headers=WORKER).status_code
         == 422
     )
+    # Any city is accepted (normalized)
     assert (
         client.put(
             "/customers/me", json={**CUSTOMER_PROFILE, "city": "Delhi"}, headers=CUSTOMER
         ).status_code
-        == 422
+        == 200
     )
     assert (
         client.put(
@@ -76,7 +77,7 @@ def test_list_workers_filters(client, worker, customer):
     n = lambda qs: len(client.get(f"/workers?{qs}", headers=CUSTOMER).json())  # noqa: E731
     assert n("") == 1
     assert n("tags=cooking") == 1
-    assert n("tags=childcare") == 0
+    assert n("tags=grocery") == 0
     assert n("days=sat") == 0
     assert n("days=mon&days=sat") == 1
     assert n("times=evening") == 0
@@ -105,7 +106,7 @@ def test_matching_ranks_by_overlap(client, worker, customer):
     client.post("/me", json={"role": "worker", "phone": "+15550000002"}, headers=WORKER2)
     client.put(
         "/workers/me",
-        json={**WORKER_PROFILE, "display_name": "Nanny", "tags": ["childcare"]},
+        json={**WORKER_PROFILE, "display_name": "Shopper", "tags": ["grocery"]},
         headers=WORKER2,
     )
     m = client.get("/workers/matching", headers=CUSTOMER).json()
@@ -155,7 +156,15 @@ def test_worker_city_validation(client, worker):
         client.put(
             "/workers/me", json={**WORKER_PROFILE, "work_cities": ["Delhi"]}, headers=WORKER
         ).status_code
-        == 422
+        == 200
     )
+    # Normalized and de-duplicated
+    r = client.put(
+        "/workers/me",
+        json={**WORKER_PROFILE, "work_cities": ["fremont", "Fremont ", "mountain house"]},
+        headers=WORKER,
+    )
+    assert r.status_code == 200 and r.json()["work_cities"] == ["Fremont", "Mountain House"]
+    client.put("/workers/me", json=WORKER_PROFILE, headers=WORKER)
     r = client.get("/workers/me", headers=WORKER).json()
     assert r["city"] == "Fremont" and r["work_cities"] == ["Fremont", "Newark"]

@@ -2,25 +2,21 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 
 import { errorMessage } from '@/api/client';
-import { authErrorKey, useAuth, type Contact } from '@/auth/AuthContext';
+import { authErrorKey, useAuth } from '@/auth/AuthContext';
 import { Button, Field, InlineMessage, Input, Screen } from '@/components/ui';
 import { useI18n, type StringKey } from '@/i18n';
 import { displayPhone } from '@/lib/phone';
 import { spacing } from '@/theme';
 
 /**
- * Shared code-entry screen after sign-up. On success the Gate routes onward.
- * - mode=confirmSignUp (email): answers the sign-up confirmation code, then auto-signs-in.
- * - mode=confirmSignIn (phone): answers the CUSTOM_AUTH (Twilio Verify) log-in challenge.
+ * Code-entry screen after sign-up: answers the CUSTOM_AUTH (Twilio Verify) log-in challenge
+ * for the phone passed in `phone`. On success the Gate routes onward.
  */
 export default function Verify() {
   const { t } = useI18n();
-  const { confirmSignUp, resendSignUpCode, signIn, confirmSignIn } = useAuth();
-  const params = useLocalSearchParams<{ username?: string; kind?: string; mode?: string }>();
-  const username = params.username ?? '';
-  const isPhone = params.kind === 'phone';
-  const isSignIn = params.mode === 'confirmSignIn';
-  const contact: Contact = { kind: isPhone ? 'phone' : 'email', value: username };
+  const { signIn, confirmSignIn } = useAuth();
+  const params = useLocalSearchParams<{ phone?: string }>();
+  const phone = params.phone ?? '';
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -40,8 +36,7 @@ export default function Verify() {
     setBusy(true);
     setInfo(null);
     try {
-      if (isSignIn) await confirmSignIn(code);
-      else await confirmSignUp(username, code);
+      await confirmSignIn(code);
     } catch (e) {
       showError(e);
       setBusy(false);
@@ -54,19 +49,15 @@ export default function Verify() {
     setCode('');
     try {
       // For the custom challenge, "resend" means starting the sign-in over.
-      if (isSignIn) await signIn(contact);
-      else await resendSignUpCode(username);
+      await signIn(phone);
       setInfo(t('auth.codeResent'));
     } catch (e) {
       showError(e);
     }
   };
 
-  const to = isPhone ? displayPhone(username) : username;
   return (
-    <Screen
-      title={t('auth.codeTitle')}
-      subtitle={isPhone ? t('auth.codeSentPhone', { to }) : t('auth.codeSentEmail', { to })}>
+    <Screen title={t('auth.codeTitle')} subtitle={t('auth.codeSentPhone', { to: displayPhone(phone) })}>
       {error ? <InlineMessage message={error} /> : null}
       {info ? <InlineMessage message={info} tone="success" /> : null}
       <Field label={t('auth.code')}>

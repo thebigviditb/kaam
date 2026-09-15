@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
@@ -20,7 +20,7 @@ import {
   type WorkerProfile,
 } from '@/api/types';
 import { ChipGroup, ChipRadio } from '@/components/Chip';
-import { Select } from '@/components/Select';
+import { CityInput, CityMultiInput, sameCityName } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Button, Field, InlineMessage, Input, Loading, Row, Screen, Section, Toggle } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -46,7 +46,7 @@ export function WorkerProfileScreen() {
   if (profile.isPending || !meta.data || !profile.data) return <Loading />;
   return (
     <Screen title={t('profile.title')} subtitle={t('profile.workerIntro')}>
-      <WorkerForm initial={profile.data} allTags={meta.data.tags} cities={meta.data.cities} />
+      <WorkerForm initial={profile.data} allTags={meta.data.tags} />
       <Section title={t('profile.media')}>
         <MediaSection />
       </Section>
@@ -54,7 +54,7 @@ export function WorkerProfileScreen() {
   );
 }
 
-function WorkerForm({ initial, allTags, cities }: { initial: WorkerProfile; allTags: string[]; cities: string[] }) {
+function WorkerForm({ initial, allTags }: { initial: WorkerProfile; allTags: string[] }) {
   const { t, label } = useI18n();
   const upsert = useUpsertWorkerProfile();
   const [name, setName] = useState(initial.display_name);
@@ -70,6 +70,18 @@ function WorkerForm({ initial, allTags, cities }: { initial: WorkerProfile; allT
   const [visible, setVisible] = useState(initial.is_visible);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useSavedFlash();
+
+  // A changed home city is pre-added as a work city; the chip follows further edits.
+  const autoAdded = useRef<string | null>(null);
+  const onHomeCity = (c: string | null) => {
+    setCity(c);
+    setWorkCities((w) => {
+      const prev = autoAdded.current;
+      const rest = prev ? w.filter((x) => !sameCityName(x, prev)) : w;
+      autoAdded.current = c;
+      return c && !rest.some((x) => sameCityName(x, c)) ? [...rest, c] : rest;
+    });
+  };
 
   const submit = async () => {
     if (!name.trim()) return setError(t('onb.nameRequired'));
@@ -115,18 +127,10 @@ function WorkerForm({ initial, allTags, cities }: { initial: WorkerProfile; allT
         <Input value={bio} onChangeText={setBio} multiline placeholder={t('onb.w.bioPlaceholder')} />
       </Field>
       <Field label={t('onb.w.city')}>
-        <Select
-          value={city}
-          options={cities}
-          onChange={(c) => {
-            setCity(c);
-            if (c && !workCities.includes(c)) setWorkCities((w) => [...w, c]);
-          }}
-          placeholder={t('common.city')}
-        />
+        <CityInput value={city} onChange={onHomeCity} />
       </Field>
       <Field label={t('onb.w.workCities')} hint={t('onb.w.workCitiesHint')}>
-        <ChipGroup options={cities} value={workCities} onChange={setWorkCities} labelFor={(v) => v} />
+        <CityMultiInput value={workCities} onChange={setWorkCities} />
       </Field>
       <TagPicker tags={allTags} value={tags} onChange={setTags} otherText={otherText} onOtherTextChange={setOtherText} />
       <Field label={t('common.days')}>
@@ -162,7 +166,7 @@ export function CustomerProfileScreen() {
   if (profile.isPending || !meta.data || !profile.data) return <Loading />;
   return (
     <Screen title={t('profile.title')} subtitle={t('profile.customerIntro')}>
-      <CustomerForm initial={profile.data} allTags={meta.data.tags} cities={meta.data.cities} />
+      <CustomerForm initial={profile.data} allTags={meta.data.tags} />
       <Section title={t('profile.workMedia')}>
         <MediaSection hint={t('profile.workMediaHint')} />
       </Section>
@@ -170,15 +174,7 @@ export function CustomerProfileScreen() {
   );
 }
 
-function CustomerForm({
-  initial,
-  allTags,
-  cities,
-}: {
-  initial: CustomerProfile;
-  allTags: string[];
-  cities: string[];
-}) {
+function CustomerForm({ initial, allTags }: { initial: CustomerProfile; allTags: string[] }) {
   const { t, label } = useI18n();
   const upsert = useUpsertCustomerProfile();
   const [name, setName] = useState(initial.display_name);
@@ -234,7 +230,7 @@ function CustomerForm({
         <Input value={name} onChangeText={setName} />
       </Field>
       <Field label={t('common.city')}>
-        <Select value={city} options={cities} onChange={setCity} placeholder={t('common.city')} />
+        <CityInput value={city} onChange={setCity} />
       </Field>
       <TagPicker tags={allTags} value={tags} onChange={setTags} otherText={otherText} onOtherTextChange={setOtherText} />
       <Field label={t('onb.c.timingTitle')}>

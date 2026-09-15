@@ -15,9 +15,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { isApiError } from '@/api/client';
-import { useMarkRead, useMe, useMessages, useMyConnections, useSendMessage } from '@/api/hooks';
-import type { ChatMessage, Connection, Role } from '@/api/types';
+import { useMarkRead, useMe, useMessages, useMyConnections, useSendMessage, useUpdateMe } from '@/api/hooks';
+import type { ChatMessage, Connection, HinglishDisplay, Role } from '@/api/types';
 import { Back } from '@/components/Back';
+import { HinglishDisplayToggle } from '@/components/HinglishDisplayToggle';
 import { ReportModal } from '@/components/ReportModal';
 import { ErrorView, InlineMessage, Loading } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -65,10 +66,20 @@ export function ChatScreen() {
       </View>
     );
   }
-  return <ChatRoom conn={conn} role={role} myId={me.data.id} />;
+  return <ChatRoom conn={conn} role={role} myId={me.data.id} hinglishDisplay={me.data.hinglish_display ?? null} />;
 }
 
-function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: string }) {
+function ChatRoom({
+  conn,
+  role,
+  myId,
+  hinglishDisplay,
+}: {
+  conn: Connection;
+  role: Role;
+  myId: string;
+  hinglishDisplay: HinglishDisplay | null;
+}) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -82,10 +93,21 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   const messages = useMessages(conn.id, { enabled: accepted });
   const send = useSendMessage(conn.id, myId);
   const markRead = useMarkRead(conn.id);
+  const updateMe = useUpdateMe();
 
   const [draft, setDraft] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
+  // Ids of translated messages the reader has flipped to the original text.
+  const [showingOriginal, setShowingOriginal] = useState<Set<string>>(() => new Set());
+  const toggleOriginal = useCallback((id: string) => {
+    setShowingOriginal((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -93,6 +115,20 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   const list = useMemo(() => data ?? [], [data]);
   const count = list.length;
   const lastIncomingId = [...list].reverse().find((m) => m.sender_id !== myId)?.id ?? null;
+  // English readers who have not said how they want Hinglish shown get asked once,
+  // under the first Hinglish message from the other party. Hindi readers always get
+  // Hindi translations, so the question never applies to them.
+  const hinglishPromptId =
+    lang === 'en' && hinglishDisplay === null
+      ? (list.find((m) => m.sender_id !== myId && m.lang === 'hinglish')?.id ?? null)
+      : null;
+  const chooseHinglish = useCallback(
+    (v: HinglishDisplay) => {
+      if (updateMe.isPending) return;
+      updateMe.mutate({ hinglish_display: v });
+    },
+    [updateMe],
+  );
 
   // Mark read on open and whenever a new incoming message lands while we're here.
   useEffect(() => {
@@ -200,7 +236,26 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
                     <Text style={s.dayLabel}>{formatDayLabel(g.date, lang, t)}</Text>
                   </View>
                   {g.items.map((m) => (
-                    <Bubble key={m.id} m={m} mine={m.sender_id === myId} lang={lang} />
+                    <React.Fragment key={m.id}>
+                      <Bubble
+                        m={m}
+                        mine={m.sender_id === myId}
+                        lang={lang}
+                        original={showingOriginal.has(m.id)}
+                        onToggleOriginal={toggleOriginal}
+                      />
+                      {m.id === hinglishPromptId ? (
+                        <View style={s.hinglishPrompt} testID="hinglish-prompt">
+                          <Text style={s.hinglishPromptText}>{t('chat.hinglishPrompt')}</Text>
+                          <HinglishDisplayToggle
+                            value={null}
+                            onChange={chooseHinglish}
+                            disabled={updateMe.isPending}
+                            compact
+                          />
+                        </View>
+                      ) : null}
+                    </React.Fragment>
                   ))}
                 </View>
               ))
@@ -252,13 +307,49 @@ function ChatRoom({ conn, role, myId }: { conn: Connection; role: Role; myId: st
   );
 }
 
-function Bubble({ m, mine, lang }: { m: ChatMessage; mine: boolean; lang: string }) {
+/**
+ * One message. When the server supplied `translated_body` (the message in the
+ * reader's language) that is shown by default with a "Translated" tag and a
+ * link to flip to the original; optimistic sends never have one.
+ */
+function Bubble({
+  m,
+  mine,
+  lang,
+  original,
+  onToggleOriginal,
+}: {
+  m: ChatMessage;
+  mine: boolean;
+  lang: string;
+  original: boolean;
+  onToggleOriginal: (id: string) => void;
+}) {
+  const { t } = useI18n();
   const pending = m.id.startsWith('tmp-');
+  const translated = !pending && typeof m.translated_body === 'string' && m.translated_body.length > 0;
+  const showTranslation = translated && !original;
+  const bodyText = showTranslation ? (m.translated_body as string) : m.body;
+  const metaColor = mine ? s.timeMine : s.timeTheirs;
   return (
     <View style={[s.bubbleRow, mine ? s.bubbleRowMine : s.bubbleRowTheirs]}>
       <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleTheirs, pending && { opacity: 0.6 }]}>
-        <Text style={[s.bubbleText, mine && { color: colors.accentText }]}>{m.body}</Text>
-        <Text style={[s.time, mine ? s.timeMine : s.timeTheirs]}>{formatTime(parseServerDate(m.created_at), lang)}</Text>
+        <Text style={[s.bubbleText, mine && { color: colors.accentText }]}>{bodyText}</Text>
+        {translated ? (
+          <Pressable
+            onPress={() => onToggleOriginal(m.id)}
+            accessibilityRole="button"
+            hitSlop={6}
+            style={({ pressed }) => [s.toggle, pressed && { opacity: 0.6 }]}>
+            <Text style={[s.toggleText, metaColor]}>
+              {showTranslation ? t('chat.showOriginal') : t('chat.showTranslation')}
+            </Text>
+          </Pressable>
+        ) : null}
+        <View style={s.metaRow}>
+          {showTranslation ? <Text style={[s.translatedTag, metaColor]}>{t('chat.translated')}</Text> : null}
+          <Text style={[s.time, metaColor]}>{formatTime(parseServerDate(m.created_at), lang)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -327,7 +418,13 @@ const s = StyleSheet.create({
   bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 4 },
   bubbleText: { fontSize: 15, lineHeight: 21, color: colors.text },
-  time: { fontSize: 11, marginTop: 3, alignSelf: 'flex-end' },
+  hinglishPrompt: { alignSelf: 'flex-start', maxWidth: '80%', marginTop: 2, marginBottom: spacing.sm, gap: 6 },
+  hinglishPromptText: { fontSize: 12, lineHeight: 16, color: colors.muted },
+  toggle: { alignSelf: 'flex-start', marginTop: 4 },
+  toggleText: { fontSize: 12, textDecorationLine: 'underline' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 3 },
+  translatedTag: { fontSize: 10, fontStyle: 'italic' },
+  time: { fontSize: 11 },
   timeMine: { color: 'rgba(255,255,255,0.8)' },
   timeTheirs: { color: colors.muted },
   composer: {

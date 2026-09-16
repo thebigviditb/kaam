@@ -85,9 +85,10 @@ for audio streaming. Nothing in the web app has to change for that.
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
 
 **Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
-within_2_weeks, within_month, flexible. **Match score** = 10 × shared tags + 2 × shared
-days + shared time slots; zero shared tags, or a household city the worker doesn't cover
-(`work_cities` + home city), means no match.
+within_2_weeks, within_month, flexible. **Matching never excludes anyone.** Score = 10 × shared tags + 15 if the worker covers the
+household's city (`work_cities` + home city) + 2 × shared days + shared time slots. A match is
+**exact** when tags, city, days and times all overlap; exact matches list first, everyone else
+follows under a "Not an exact match" divider, best fit first.
 
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
 dishes, ironing, grocery, other.

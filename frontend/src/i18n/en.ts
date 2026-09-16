@@ -280,7 +280,7 @@ export const en = {
     'share.title': 'Share Kaam',
     'share.hint': 'Know someone who could use Kaam? Send them the link.',
     'share.bannerWorker': "Know somebody who's also looking for work? Share Kaam.",
-    'share.bannerCustomer': 'Know somebody who could use a maid? Share Kaam.',
+    'share.bannerCustomer': 'Know somebody who could use household help? Share Kaam.',
     'share.linkCopied': 'Link copied',
     'share.message':
       'Looking for household help, or for household work, in the Bay Area? Try Kaam: cooks, cleaners and more, in English or Hindi. Sign up with your phone number: {link}',

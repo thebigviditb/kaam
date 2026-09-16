@@ -10,6 +10,13 @@ def get_current_user(claims: Claims = Depends(get_claims), db: Session = Depends
     user = db.query(User).filter(User.cognito_sub == claims.sub).one_or_none()
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "user not registered; call POST /me")
+    # Logging in again cancels a scheduled deletion: a token issued after the request
+    # means a fresh sign-in (the app signs users out when they request deletion).
+    if user.deletion_requested_at and claims.issued_at:
+        from app.account import as_utc, restore_account
+
+        if claims.issued_at > as_utc(user.deletion_requested_at).timestamp():
+            restore_account(db, user)
     return user
 
 

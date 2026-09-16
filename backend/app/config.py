@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     media_aws_secret_access_key: str = ""
     cors_origins: str = "http://localhost:8081"
     auth_dev_bypass: bool = False
+    anthropic_api_key: str = ""
+    cron_secret: str = ""
+    deletion_grace_days: int = 30
 
     @property
     def cors_origin_list(self) -> list[str]:

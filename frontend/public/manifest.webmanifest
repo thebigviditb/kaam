@@ -1,7 +1,7 @@
 {
   "name": "Kaam",
   "short_name": "Kaam",
-  "description": "Household help in the Bay Area — find work, find help.",
+  "description": "Household help in the Bay Area. Find work, find help.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

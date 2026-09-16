@@ -1,6 +1,6 @@
 # Kaam — Architecture
 
-Kaam is a marketplace connecting domestic workers (cooks, cleaners, nannies, etc.)
+Kaam is a marketplace connecting domestic workers (cooks, cleaners, etc.)
 in the Bay Area with households that need help. Both sides answer a short onboarding
 questionnaire (what work, when, and for households, where and what pay), the app ranks
 matches, and either side can reach out. Once the other side accepts, phone numbers are
@@ -44,10 +44,10 @@ for audio streaming. Nothing in the web app has to change for that.
   `aws-amplify` Auth (works on web and native).
 - **Language:** i18n with English and Hindi. A **Settings** screen has a language
   picker; the choice is saved on the device and on the user record.
-- **Auth is passwordless.** Workers sign up and log in with a phone number and a
-  texted code. Households can use phone or email. No passwords anywhere.
+- **Auth is passwordless and phone-only.** Everyone signs up and logs in with a phone
+  number and a texted code (Cognito custom auth + Twilio Verify). No passwords, no email.
 - **Screens (v1):**
-  - Welcome → pick Worker / Household → phone (or email) → code → registered
+  - Welcome → pick Worker / Household → phone → code → registered
   - **Onboarding wizard**, one question per screen:
     - Household: name + city → what work (tags + Other) → when needed (asap / 2 weeks /
       month / flexible) → which days + time of day → expected pay + description
@@ -75,12 +75,13 @@ for audio streaming. Nothing in the web app has to change for that.
 
 | Table            | Key fields |
 |------------------|-----------|
-| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language |
+| users            | id, cognito_sub, role (worker/customer), email, phone (required), preferred_language, referral_code, referred_by_id, deletion_requested_at |
 | worker_profiles  | user_id, display_name, bio, tags[], other_tag_text, years_experience, hourly_rate, city (home), work_cities[], days[], times[], is_visible |
 | customer_profiles| user_id, display_name, city, tags[], other_tag_text, description, pay_amount, pay_type, start_timing, days[], times[], is_active |
 | connections      | id, customer_id, worker_id, initiated_by, message, status (pending/accepted/declined), *_last_read_at; unique per pair |
-| messages         | id, connection_id, sender_id, body, created_at |
+| messages         | id, connection_id, sender_id, body, lang (detected), translations {en, hi}, created_at |
 | reports          | id, reporter_id, reported_user_id, connection_id?, reason, description, status |
+| feedback         | id, user_id, category (bug/idea/other), message, contact?, page? |
 | media            | id, owner_user_id, kind (image/video), s3_key, content_type |
 
 **Days:** mon…sun. **Times:** morning / afternoon / evening. **Start timing:** asap,
@@ -89,9 +90,10 @@ days + shared time slots; zero shared tags, or a household city the worker doesn
 (`work_cities` + home city), means no match.
 
 **Tags (shared by jobs and worker profiles):** cooking, cleaning, laundry, dusting,
-dishes, ironing, childcare, elder_care, grocery, other.
+dishes, ironing, grocery, other.
 
-**City:** a fixed Bay Area list so filtering works without geocoding.
+**City:** free text, normalized (case/spacing) so "fremont" and "Fremont" match; `/meta.cities`
+is a Bay Area + California suggestion list for autocomplete, not a constraint.
 
 ### Endpoints (v1)
 
@@ -103,7 +105,15 @@ GET/PUT /customers/me       GET /customers?tags=&days=&times=&city=&min_pay=&pay
 GET /customers/matching     GET /customers/{id}      ← the voice agent's "what work is there for me?"
 POST /connections           GET /connections/me      PATCH /connections/{id}   DELETE /connections/{id}
 GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, accepted only; polled)
+  Messages are translated EN<->HI on send by Claude (claude-opus-5, structured JSON, cached on
+  the row) and served in the viewer's language (`?lang=`), with the original available.
+  Detected `lang` is en / hi / hinglish. Hindi readers always get Devanagari Hindi. English
+  readers get Hinglish as written unless `users.hinglish_display = "english"` (the chat asks
+  once under the first Hinglish message; changeable in Settings under Language).
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
+POST /feedback              (Settings → Send feedback)
+POST /me/delete  POST /me/restore   (30-day grace; a newer sign-in token auto-restores)
+GET  /internal/purge-deleted-accounts   (Vercel cron, daily 09:00 UTC, Bearer CRON_SECRET)
 POST /media/presign         POST /media              DELETE /media/{id}
 ```
 

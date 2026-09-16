@@ -10,9 +10,9 @@ if (amplifyConfigured) {
       Cognito: {
         userPoolId: config.cognitoUserPoolId,
         userPoolClientId: config.cognitoClientId,
-        // Passwordless: users sign up with a phone (workers) or phone/email (households)
-        // and log in with an SMS or email one-time code (USER_AUTH flow).
-        loginWith: { phone: true, email: true },
+        // Passwordless: users sign up and log in with their phone number and a one-time
+        // SMS code (CUSTOM_AUTH flow backed by Twilio Verify).
+        loginWith: { phone: true },
       },
     },
   });

@@ -9,6 +9,7 @@ import type {
   ConnectionDecision,
   CustomerFilters,
   CustomerProfileIn,
+  FeedbackCreate,
   MediaRegister,
   ReportCreate,
   UserCreate,
@@ -17,6 +18,8 @@ import type {
   WorkerProfileIn,
 } from './types';
 import { useAuth } from '@/auth/AuthContext';
+import { useI18n, type Language } from '@/i18n';
+import { pendingRef } from '@/lib/referral';
 
 export const keys = {
   meta: ['meta'] as const,
@@ -30,8 +33,12 @@ export const keys = {
   matchingCustomers: ['customers', 'matching'] as const,
   customer: (id: string) => ['customers', id] as const,
   media: ['media'] as const,
+  /** Prefix for every connection-related query (list + chats); use for invalidation. */
   connections: ['connections'] as const,
-  messages: (connectionId: string) => ['connections', connectionId, 'messages'] as const,
+  /** The connections list. Keyed by UI language because `last_message.translated_body` depends on it. */
+  connectionsList: (lang: Language) => ['connections', 'me', lang] as const,
+  /** One chat. Keyed by UI language because `translated_body` depends on it. */
+  messages: (connectionId: string, lang: Language) => ['connections', connectionId, 'messages', lang] as const,
 };
 
 function useSignedIn() {
@@ -50,8 +57,14 @@ export function useMe() {
 export function useCreateMe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: UserCreate) => api.createMe(body),
-    onSuccess: (user) => qc.setQueryData(keys.me, user),
+    mutationFn: async (body: UserCreate) => {
+      const ref = await pendingRef.get();
+      return api.createMe(ref ? { ...body, ref } : body);
+    },
+    onSuccess: (user) => {
+      qc.setQueryData(keys.me, user);
+      pendingRef.clear();
+    },
   });
 }
 
@@ -59,18 +72,43 @@ export function useUpdateMe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: UserUpdate) => api.updateMe(body),
+    onSuccess: (user, body) => {
+      qc.setQueryData(keys.me, user);
+      // The Hinglish choice changes which messages come back with `translated_body`,
+      // so chats and connection previews must be refetched.
+      if (body.hinglish_display !== undefined) qc.invalidateQueries({ queryKey: keys.connections });
+    },
+  });
+}
+
+export function useDeleteMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.deleteMe(),
     onSuccess: (user) => qc.setQueryData(keys.me, user),
+  });
+}
+
+export function useRestoreMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.restoreMe(),
+    onSuccess: (user) => {
+      qc.setQueryData(keys.me, user);
+      // The profile is visible again; everything derived from it (profiles, matches) is stale.
+      void qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
+    },
   });
 }
 
 // ---- worker profile ----
 
-export function useMyWorkerProfile() {
-  const enabled = useSignedIn();
+export function useMyWorkerProfile({ enabled = true } = {}) {
+  const signedIn = useSignedIn();
   return useQuery({
     queryKey: keys.workerProfile,
     queryFn: api.getMyWorkerProfile,
-    enabled,
+    enabled: signedIn && enabled,
     retry: false,
   });
 }
@@ -105,12 +143,12 @@ export function useWorker(id: string | undefined) {
 
 // ---- customer profile ----
 
-export function useMyCustomerProfile() {
-  const enabled = useSignedIn();
+export function useMyCustomerProfile({ enabled = true } = {}) {
+  const signedIn = useSignedIn();
   return useQuery({
     queryKey: keys.customerProfile,
     queryFn: api.getMyCustomerProfile,
-    enabled,
+    enabled: signedIn && enabled,
     retry: false,
   });
 }
@@ -193,12 +231,29 @@ function useInvalidateConnectionViews() {
   };
 }
 
+/**
+ * Refetches connection lists and chats when the UI language changes, so
+ * server-side translations follow the language the user is reading in.
+ * Mount once (root layout).
+ */
+export function useRefreshTranslationsOnLangChange() {
+  const qc = useQueryClient();
+  const { lang } = useI18n();
+  const prev = useRef(lang);
+  useEffect(() => {
+    if (prev.current === lang) return;
+    prev.current = lang;
+    qc.invalidateQueries({ queryKey: keys.connections });
+  }, [lang, qc]);
+}
+
 /** Polled every 15 s (and on focus) so unread badges and chat previews stay fresh without websockets. */
 export function useMyConnections() {
   const enabled = useSignedIn();
+  const { lang } = useI18n();
   return useQuery({
-    queryKey: keys.connections,
-    queryFn: api.myConnections,
+    queryKey: keys.connectionsList(lang),
+    queryFn: () => api.myConnections(lang),
     enabled,
     refetchInterval: 15_000,
     refetchOnWindowFocus: true,
@@ -255,12 +310,13 @@ function mergeMessages(existing: ChatMessage[], incoming: ChatMessage[]): ChatMe
 export function useMessages(connectionId: string | undefined, { enabled = true } = {}) {
   const qc = useQueryClient();
   const signedIn = useSignedIn();
-  const key = keys.messages(connectionId ?? '');
+  const { lang } = useI18n();
+  const key = keys.messages(connectionId ?? '', lang);
   const on = signedIn && enabled && Boolean(connectionId);
 
   const query = useQuery({
     queryKey: key,
-    queryFn: () => api.listMessages(connectionId as string),
+    queryFn: () => api.listMessages(connectionId as string, { lang }),
     enabled: on,
     staleTime: Infinity,
     retry: false,
@@ -274,7 +330,7 @@ export function useMessages(connectionId: string | undefined, { enabled = true }
       const cur = qc.getQueryData<ChatMessage[]>(key) ?? [];
       const last = [...cur].reverse().find((m) => !m.id.startsWith('tmp-'));
       try {
-        const next = await api.listMessages(connectionId as string, last?.id);
+        const next = await api.listMessages(connectionId as string, { after: last?.id, lang });
         if (cancelled || next.length === 0) return;
         qc.setQueryData<ChatMessage[]>(key, (old) => mergeMessages(old ?? [], next));
       } catch {
@@ -287,14 +343,15 @@ export function useMessages(connectionId: string | undefined, { enabled = true }
       clearInterval(id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [on, loaded, connectionId, qc]);
+  }, [on, loaded, connectionId, lang, qc]);
 
   return query;
 }
 
 export function useSendMessage(connectionId: string, myUserId: string) {
   const qc = useQueryClient();
-  const key = keys.messages(connectionId);
+  const { lang } = useI18n();
+  const key = keys.messages(connectionId, lang);
   return useMutation({
     mutationFn: (body: string) => api.sendMessage(connectionId, { body }),
     onMutate: async (body) => {
@@ -304,6 +361,8 @@ export function useSendMessage(connectionId: string, myUserId: string) {
         sender_id: myUserId,
         body,
         created_at: new Date().toISOString(),
+        lang: null,
+        translated_body: null,
       };
       qc.setQueryData<ChatMessage[]>(key, (old) => [...(old ?? []), tmp]);
       return { tmpId: tmp.id };
@@ -313,10 +372,20 @@ export function useSendMessage(connectionId: string, myUserId: string) {
         const rest = (old ?? []).filter((m) => m.id !== ctx?.tmpId && m.id !== msg.id);
         return mergeMessages(rest, [msg]);
       });
-      qc.setQueryData<Connection[]>(keys.connections, (old) =>
+      qc.setQueryData<Connection[]>(keys.connectionsList(lang), (old) =>
         old?.map((c) =>
           c.id === connectionId
-            ? { ...c, last_message: { id: msg.id, sender_id: msg.sender_id, body: msg.body, created_at: msg.created_at } }
+            ? {
+                ...c,
+                last_message: {
+                  id: msg.id,
+                  sender_id: msg.sender_id,
+                  body: msg.body,
+                  created_at: msg.created_at,
+                  lang: msg.lang,
+                  translated_body: msg.translated_body,
+                },
+              }
             : c,
         ),
       );
@@ -330,11 +399,12 @@ export function useSendMessage(connectionId: string, myUserId: string) {
 /** Marks a chat read on the server and zeroes the local unread count immediately. */
 export function useMarkRead(connectionId: string) {
   const qc = useQueryClient();
+  const { lang } = useI18n();
   const inFlight = useRef(false);
   return useCallback(async () => {
     if (inFlight.current) return;
     inFlight.current = true;
-    qc.setQueryData<Connection[]>(keys.connections, (old) =>
+    qc.setQueryData<Connection[]>(keys.connectionsList(lang), (old) =>
       old?.map((c) => (c.id === connectionId ? { ...c, unread_count: 0 } : c)),
     );
     try {
@@ -344,11 +414,17 @@ export function useMarkRead(connectionId: string) {
     } finally {
       inFlight.current = false;
     }
-  }, [qc, connectionId]);
+  }, [qc, connectionId, lang]);
 }
 
 // ---- reports ----
 
 export function useCreateReport() {
   return useMutation({ mutationFn: (body: ReportCreate) => api.createReport(body) });
+}
+
+// ---- feedback ----
+
+export function useSendFeedback() {
+  return useMutation({ mutationFn: (body: FeedbackCreate) => api.sendFeedback(body) });
 }

@@ -31,7 +31,3 @@ export function displayPhone(e164: string | null | undefined): string {
   if (d.length === 11 && d.startsWith('1')) return `+1 ${formatUSPhone(d.slice(1))}`;
   return e164;
 }
-
-export function looksLikeEmail(s: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
-}

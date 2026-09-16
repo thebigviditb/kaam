@@ -66,7 +66,9 @@ function ChatRow({ c, role, myId }: { c: Connection; role: Role; myId: string })
   const name = other?.display_name ?? (role === 'worker' ? t('role.customer') : t('role.worker'));
   const last = c.last_message;
   const unread = c.unread_count ?? 0;
-  const preview = last ? `${last.sender_id === myId ? `${t('conn.you')}: ` : ''}${last.body}` : t('conn.noMessagesYet');
+  // Prefer the server's translation into the viewer's language for the preview.
+  const lastText = last ? (last.translated_body ?? last.body) : '';
+  const preview = last ? `${last.sender_id === myId ? `${t('conn.you')}: ` : ''}${lastText}` : t('conn.noMessagesYet');
   const when = formatRelative(last?.created_at ?? c.created_at, lang, t);
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const openChat = () => {

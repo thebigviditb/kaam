@@ -6,7 +6,7 @@ import type { Role } from '@/api/types';
  * What we learned during sign-up (role, phone) before the app-side user exists.
  * Survives the auto-sign-in redirect so the "finish account" screen can prefill it.
  */
-export type PendingSignup = { role: Role; phone?: string };
+export type PendingSignup = { role: Role; phone: string };
 
 const KEY = 'kaam.pendingSignup';
 

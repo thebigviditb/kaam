@@ -8,6 +8,9 @@ import type {
   CustomerFilters,
   CustomerProfile,
   CustomerProfileIn,
+  FeedbackCreate,
+  FeedbackOut,
+  Language,
   Media,
   MediaRegister,
   Meta,
@@ -40,6 +43,10 @@ export const api = {
   getMe: () => nullOn404(request<User>('GET', '/me')),
   createMe: (body: UserCreate) => request<User>('POST', '/me', { body }),
   updateMe: (body: UserUpdate) => request<User>('PUT', '/me', { body }),
+  /** Schedule deletion after the grace period; the server hides the profile immediately. */
+  deleteMe: () => request<User>('POST', '/me/delete'),
+  /** Cancel a scheduled deletion and unhide the profile. */
+  restoreMe: () => request<User>('POST', '/me/restore'),
 
   // worker profile
   getMyWorkerProfile: () => nullOn404(request<WorkerProfile>('GET', '/workers/me')),
@@ -69,15 +76,17 @@ export const api = {
   // connections
   createConnection: (body: ConnectionCreate) =>
     request<Connection>('POST', '/connections', { body }),
-  myConnections: () => request<Connection[]>('GET', '/connections/me'),
+  /** `lang` overrides the stored preference for `last_message.translated_body`. */
+  myConnections: (lang?: Language) => request<Connection[]>('GET', '/connections/me', { query: { lang } }),
   decideConnection: (id: string, body: ConnectionDecision) =>
     request<Connection>('PATCH', `/connections/${id}`, { body }),
   withdrawConnection: (id: string) => request<void>('DELETE', `/connections/${id}`),
 
   // chat (accepted connections only)
-  listMessages: (connectionId: string, after?: string, limit = 100) =>
+  /** `lang` overrides the stored preference for `translated_body`. */
+  listMessages: (connectionId: string, { after, lang, limit = 100 }: { after?: string; lang?: Language; limit?: number } = {}) =>
     request<ChatMessage[]>('GET', `/connections/${connectionId}/messages`, {
-      query: { after, limit },
+      query: { after, lang, limit },
     }),
   sendMessage: (connectionId: string, body: ChatMessageCreate) =>
     request<ChatMessage>('POST', `/connections/${connectionId}/messages`, { body }),
@@ -85,6 +94,9 @@ export const api = {
 
   // reports
   createReport: (body: ReportCreate) => request<ReportOut>('POST', '/reports', { body }),
+
+  // feedback
+  sendFeedback: (body: FeedbackCreate) => request<FeedbackOut>('POST', '/feedback', { body }),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

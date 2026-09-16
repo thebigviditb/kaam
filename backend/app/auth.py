@@ -22,6 +22,7 @@ class Claims:
     sub: str
     email: str | None = None
     access_token: str | None = None
+    issued_at: int | None = None  # token iat (epoch seconds); None for dev tokens
 
     def resolve_email(self, settings: Settings) -> str | None:
         """Cognito access tokens carry no email; ask Cognito for it when needed."""
@@ -70,7 +71,12 @@ def verify_token(token: str, settings: Settings) -> Claims:
     if settings.cognito_client_id and client != settings.cognito_client_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "token not for this app")
 
-    return Claims(sub=payload["sub"], email=payload.get("email"), access_token=token)
+    return Claims(
+        sub=payload["sub"],
+        email=payload.get("email"),
+        access_token=token,
+        issued_at=payload.get("iat"),
+    )
 
 
 def get_claims(

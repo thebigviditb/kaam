@@ -3,6 +3,9 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useUpdateMe } from '@/api/hooks';
+
+import { LanguageToggle } from './LanguageToggle';
 import { Button, InlineMessage } from './ui';
 import { useI18n } from '@/i18n';
 import { colors, maxContentWidth, radius, spacing, text } from '@/theme';
@@ -35,6 +38,7 @@ export function WizardStep({
 }) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const updateMe = useUpdateMe();
   return (
     <View style={s.screen}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.scroll}>
@@ -48,7 +52,10 @@ export function WizardStep({
             ) : (
               <View />
             )}
-            <Text style={text.small}>{t('onb.progress', { n: step, total })}</Text>
+            <View style={s.topRight}>
+              <Text style={text.small}>{t('onb.progress', { n: step, total })}</Text>
+              <LanguageToggle onChange={(l) => updateMe.mutate({ preferred_language: l })} />
+            </View>
           </View>
           <View style={s.track}>
             <View style={[s.fill, { width: `${Math.round((step / total) * 100)}%` }]} />
@@ -151,6 +158,7 @@ const s = StyleSheet.create({
   backText: { color: colors.accent, fontSize: 16, fontWeight: '600' },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.border, marginVertical: spacing.md, overflow: 'hidden' },
   fill: { height: 6, backgroundColor: colors.accent },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontSize: 26, fontWeight: '700', color: colors.text, marginBottom: spacing.md, lineHeight: 32 },
   footer: {
     borderTopWidth: 1,

@@ -110,12 +110,15 @@ def test_matching_ranks_by_overlap(client, worker, customer):
         headers=WORKER2,
     )
     m = client.get("/workers/matching", headers=CUSTOMER).json()
-    assert [w["display_name"] for w in m] == ["Sunita"]
-    assert m[0]["match_score"] > 0
+    assert [w["display_name"] for w in m] == ["Sunita", "Shopper"]
+    assert [w["match_level"] for w in m] == ["exact", "partial"]
+    assert m[0]["match_score"] > m[1]["match_score"]
 
     m = client.get("/customers/matching", headers=WORKER).json()
-    assert [c["display_name"] for c in m] == ["Batta family"]
-    assert client.get("/customers/matching", headers=WORKER2).json() == []
+    assert [c["display_name"] for c in m] == ["Batta family"] and m[0]["match_level"] == "exact"
+    # the non-overlapping worker still sees the household, as a partial match
+    m = client.get("/customers/matching", headers=WORKER2).json()
+    assert [c["match_level"] for c in m] == ["partial"]
 
 
 def test_phone_hidden_until_connected(client, worker, customer):
@@ -136,10 +139,10 @@ def test_hidden_profiles(client, worker, customer):
 def test_city_coverage_drives_matching(client, worker, customer):
     # Household in Fremont is covered (worker works in Fremont/Newark)
     assert len(client.get("/customers/matching", headers=WORKER).json()) == 1
-    # Move the household to Oakland: no longer covered
+    # Move the household to Oakland: no longer covered, so it becomes a partial match
     client.put("/customers/me", json={**CUSTOMER_PROFILE, "city": "Oakland"}, headers=CUSTOMER)
-    assert client.get("/customers/matching", headers=WORKER).json() == []
-    assert client.get("/workers/matching", headers=CUSTOMER).json() == []
+    assert client.get("/customers/matching", headers=WORKER).json()[0]["match_level"] == "partial"
+    assert client.get("/workers/matching", headers=CUSTOMER).json()[0]["match_level"] == "partial"
     # /workers?city= filters by work cities
     assert len(client.get("/workers?city=Newark", headers=CUSTOMER).json()) == 1
     assert len(client.get("/workers?city=Oakland", headers=CUSTOMER).json()) == 0

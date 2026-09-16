@@ -161,6 +161,7 @@ class WorkerProfileOut(ORM):
     phone: str | None = None
     connection: ConnectionSummary | None = None
     match_score: int = 0
+    match_level: Literal["exact", "partial"] | None = None
 
 
 # ---- customer profile (the household's need) ----
@@ -203,6 +204,7 @@ class CustomerProfileOut(ORM):
     phone: str | None = None
     connection: ConnectionSummary | None = None
     match_score: int = 0
+    match_level: Literal["exact", "partial"] | None = None
 
 
 # ---- connections ----

@@ -108,6 +108,21 @@ function CustomerProfileBasis() {
   );
 }
 
+/** Divider shown once, before the first non-exact match. */
+function PartialDivider({ label }: { label: string }) {
+  return (
+    <View style={s.divider}>
+      <View style={s.dividerLine} />
+      <Text style={[text.small, s.dividerText]}>{label}</Text>
+      <View style={s.dividerLine} />
+    </View>
+  );
+}
+
+function firstPartialIndex(items: { match_level: 'exact' | 'partial' | null }[]) {
+  return items.findIndex((x) => x.match_level === 'partial');
+}
+
 /** Worker's Matches tab (their feed): households ranked by fit. */
 export function WorkerMatches() {
   const { t } = useI18n();
@@ -126,13 +141,15 @@ export function WorkerMatches() {
       ) : q.data.length === 0 ? (
         <EmptyState message={t('matches.emptyWorker')} />
       ) : (
-        q.data.map((c) => (
-          <CustomerCard
-            key={c.user_id}
-            customer={c}
-            showScore
-            onPress={() => router.push({ pathname: '/(worker)/customers/[id]', params: { id: c.user_id } })}
-          />
+        q.data.map((c, i) => (
+          <React.Fragment key={c.user_id}>
+            {i === firstPartialIndex(q.data) ? <PartialDivider label={t('matches.partialWorker')} /> : null}
+            <CustomerCard
+              customer={c}
+              showScore
+              onPress={() => router.push({ pathname: '/(worker)/customers/[id]', params: { id: c.user_id } })}
+            />
+          </React.Fragment>
         ))
       )}
     </Screen>
@@ -157,13 +174,15 @@ export function CustomerMatches() {
       ) : q.data.length === 0 ? (
         <EmptyState message={t('matches.emptyCustomer')} />
       ) : (
-        q.data.map((w) => (
-          <WorkerCard
-            key={w.user_id}
-            worker={w}
-            showScore
-            onPress={() => router.push({ pathname: '/(customer)/workers/[id]', params: { id: w.user_id } })}
-          />
+        q.data.map((w, i) => (
+          <React.Fragment key={w.user_id}>
+            {i === firstPartialIndex(q.data) ? <PartialDivider label={t('matches.partialCustomer')} /> : null}
+            <WorkerCard
+              worker={w}
+              showScore
+              onPress={() => router.push({ pathname: '/(customer)/workers/[id]', params: { id: w.user_id } })}
+            />
+          </React.Fragment>
         ))
       )}
     </Screen>
@@ -171,6 +190,9 @@ export function CustomerMatches() {
 }
 
 const s = StyleSheet.create({
+  divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.md },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.muted },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',

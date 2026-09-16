@@ -111,6 +111,7 @@ export type WorkerProfile = WorkerProfileIn & {
   phone: string | null;
   connection: ConnectionSummary | null;
   match_score: number;
+  match_level: 'exact' | 'partial' | null;
 };
 
 // ---- customer profile (the household's need) ----
@@ -136,6 +137,7 @@ export type CustomerProfile = CustomerProfileIn & {
   phone: string | null;
   connection: ConnectionSummary | null;
   match_score: number;
+  match_level: 'exact' | 'partial' | null;
 };
 
 // ---- connections ----

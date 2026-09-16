@@ -1,5 +1,8 @@
-"""Shared matching / filtering helpers. Tags, days and times are JSON lists, so the
-overlap logic runs in Python after a coarse SQL filter."""
+"""Shared matching / filtering helpers. Tags, days, times and cities are JSON lists, so the
+overlap logic runs in Python after a coarse SQL filter.
+
+Nobody is excluded from matching: exact matches (work overlaps, city covered, availability
+overlaps) rank first; everyone else follows as a partial match, best fit first."""
 
 from app.models import CustomerProfile, WorkerProfile
 
@@ -10,16 +13,34 @@ def overlap(a: list[str] | None, b: list[str] | None) -> int:
     return len(set(a or []) & set(b or []))
 
 
+def city_covered(worker: WorkerProfile, customer: CustomerProfile) -> bool:
+    return customer.city in set(worker.work_cities or []) | {worker.city}
+
+
 def match_score(worker: WorkerProfile, customer: CustomerProfile) -> int:
-    """0 when nothing lines up. Tag overlap weighs most; availability overlap adds."""
-    tags = overlap(worker.tags, customer.tags)
-    if tags == 0:
-        return 0
-    if customer.city not in set(worker.work_cities or []) | {worker.city}:
-        return 0
+    """Higher is better. Tags weigh most, then city coverage, then availability."""
     return (
-        tags * 10 + overlap(worker.days, customer.days) * 2 + overlap(worker.times, customer.times)
+        overlap(worker.tags, customer.tags) * 10
+        + (15 if city_covered(worker, customer) else 0)
+        + overlap(worker.days, customer.days) * 2
+        + overlap(worker.times, customer.times)
     )
+
+
+def match_level(worker: WorkerProfile, customer: CustomerProfile) -> str:
+    exact = (
+        overlap(worker.tags, customer.tags) > 0
+        and city_covered(worker, customer)
+        and overlap(worker.days, customer.days) > 0
+        and overlap(worker.times, customer.times) > 0
+    )
+    return "exact" if exact else "partial"
+
+
+def rank(pairs):
+    """pairs: iterable of (worker, customer, row). Exact first, then by score desc."""
+    scored = [(match_level(w, c), match_score(w, c), r) for w, c, r in pairs]
+    return sorted(scored, key=lambda s: (s[0] != "exact", -s[1]))
 
 
 def filter_lists(

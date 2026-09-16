@@ -159,6 +159,8 @@ export const hi: Table = {
     'matches.emptyWorker': 'अभी कोई मेल खाता परिवार नहीं। थोड़ी देर बाद देखें, या प्रोफ़ाइल में और शहर जोड़ें।',
     'matches.workerBasis': 'आपकी प्रोफ़ाइल के आधार पर: {tags}, {cities}।',
     'matches.customerBasis': 'आपको चाहिए: {tags}, {city} में, {times}।',
+    'matches.partialCustomer': 'पूरा मेल नहीं, लेकिन आस-पास या मिलते-जुलते',
+    'matches.partialWorker': 'पूरा मेल नहीं, लेकिन आपकी रुचि हो सकती है',
     'matches.editProfile': 'प्रोफ़ाइल में बदलें',
     'matches.emptyCustomer': 'अभी कोई मेल खाता सहायक नहीं। थोड़ी देर बाद देखें, या प्रोफ़ाइल में अपनी ज़रूरतें बदलें।',
 

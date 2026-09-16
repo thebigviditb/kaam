@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import storage
 from app.db import get_db
 from app.deps import get_current_user, require_customer, require_worker
-from app.matching import filter_lists, match_score
+from app.matching import filter_lists, match_level, match_score, rank
 from app.models import Connection, CustomerProfile, User, WorkerProfile
 from app.schemas import (
     ConnectionSummary,
@@ -61,6 +61,7 @@ def worker_out(p: WorkerProfile, viewer: User, c: Connection | None = None) -> W
     out.connection = _summary(c)
     if viewer.customer_profile is not None:
         out.match_score = match_score(p, viewer.customer_profile)
+        out.match_level = match_level(p, viewer.customer_profile)
     return out
 
 
@@ -73,6 +74,7 @@ def customer_out(
     out.connection = _summary(c)
     if viewer.worker_profile is not None:
         out.match_score = match_score(viewer.worker_profile, p)
+        out.match_level = match_level(viewer.worker_profile, p)
     return out
 
 
@@ -149,7 +151,7 @@ def list_workers(
 
 @router.get("/workers/matching", response_model=list[WorkerProfileOut])
 def matching_workers(user: User = Depends(require_customer), db: Session = Depends(get_db)):
-    """Visible workers ranked by how well they fit this household's need."""
+    """All visible workers: exact matches first, then everyone else by fit."""
     need = user.customer_profile
     if need is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "finish onboarding first")
@@ -160,9 +162,8 @@ def matching_workers(user: User = Depends(require_customer), db: Session = Depen
         .all()
     )
     conns = _connections_for(db, user)
-    scored = [(match_score(r, need), r) for r in rows]
-    scored = sorted((s for s in scored if s[0] > 0), key=lambda s: -s[0])
-    return [worker_out(r, user, conns.get(r.user_id)) for _, r in scored]
+    ranked = rank((r, need, r) for r in rows)
+    return [worker_out(r, user, conns.get(r.user_id)) for _, _, r in ranked]
 
 
 @router.get("/workers/{user_id}", response_model=WorkerProfileOut)
@@ -238,7 +239,7 @@ def list_customers(
 
 @router.get("/customers/matching", response_model=list[CustomerProfileOut])
 def matching_customers(user: User = Depends(require_worker), db: Session = Depends(get_db)):
-    """Active households ranked by fit with this worker's skills and availability.
+    """All active households: exact matches first, then everyone else by fit.
 
     This is the endpoint the voice agent will call ("what work is available for me?").
     """
@@ -252,9 +253,8 @@ def matching_customers(user: User = Depends(require_worker), db: Session = Depen
         .all()
     )
     conns = _connections_for(db, user)
-    scored = [(match_score(me, r), r) for r in rows]
-    scored = sorted((s for s in scored if s[0] > 0), key=lambda s: -s[0])
-    return [customer_out(r, user, conns.get(r.user_id)) for _, r in scored]
+    ranked = rank((me, r, r) for r in rows)
+    return [customer_out(r, user, conns.get(r.user_id)) for _, _, r in ranked]
 
 
 @router.get("/customers/{user_id}", response_model=CustomerProfileOut)

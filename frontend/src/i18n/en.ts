@@ -157,6 +157,8 @@ export const en = {
     'matches.emptyWorker': 'No matching households yet. Check back soon, or add more cities in Profile.',
     'matches.workerBasis': 'Based on your profile: {tags}, {cities}.',
     'matches.customerBasis': 'Looking for: {tags} in {city}, {times}.',
+    'matches.partialCustomer': 'Not an exact match, but nearby or similar',
+    'matches.partialWorker': 'Not an exact match, but you might still be interested',
     'matches.editProfile': 'Edit in Profile',
     'matches.emptyCustomer': 'No matching helpers yet. Check back soon, or widen what you need in your Profile.',
 

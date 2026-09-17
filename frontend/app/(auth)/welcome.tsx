@@ -56,7 +56,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 300, maxWidth: '100%', aspectRatio: 794 / 260 },
+  logo: { width: 300, height: 98 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.lg },
   pill: {
     backgroundColor: colors.accentSoft,

@@ -11,6 +11,7 @@ import { amplifyConfigured } from './amplify';
 import { makeDevToken } from './token';
 import { tokenStore } from './tokenStore';
 import { config } from '@/config';
+import { disablePush } from '@/lib/push';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -194,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Drop this browser's push subscription while we still hold a token (best effort).
+    await disablePush();
     await tokenStore.clear();
     if (amplifyConfigured) {
       try {

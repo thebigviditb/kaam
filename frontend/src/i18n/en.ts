@@ -284,6 +284,13 @@ export const en = {
     'share.linkCopied': 'Link copied',
     'share.message':
       'Looking for household help, or for household work, in the Bay Area? Try Kaam: cooks, cleaners and more, in English or Hindi. Sign up with your phone number: {link}',
+    'push.title': 'Notifications',
+    'push.toggle': 'Notify me about new messages',
+    'push.iosHint': 'To get notifications on iPhone, add Kaam to your Home Screen first (Share button, then Add to Home Screen).',
+    'push.blocked': 'Notifications are blocked in your browser settings.',
+    'push.error': 'Could not turn on notifications. Please try again.',
+    'push.prompt': 'Get notified when someone messages you.',
+    'push.turnOn': 'Turn on',
     'settings.title': 'Settings',
     'settings.account': 'Account',
     'settings.hinglish': 'Hinglish messages',

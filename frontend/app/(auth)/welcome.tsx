@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
@@ -10,21 +10,46 @@ import { colors, spacing, text } from '@/theme';
 
 const HOUSE = 72; // rendered width of one house
 const GAP = 14;
+const STEP = HOUSE + GAP;
 
-/** A street of houses spanning the full screen width, edge to edge. */
+const DOOR = require('../../assets/brand/kaam-house-door.png');
+const LETTER = {
+  K: require('../../assets/brand/kaam-house-K.png'),
+  A: require('../../assets/brand/kaam-house-A.png'),
+  M: require('../../assets/brand/kaam-house-M.png'),
+} as const;
+const WORD = ['K', 'A', 'A', 'M'] as const;
+
+/**
+ * A street of houses spanning the whole window: the four in the middle spell K A A M,
+ * every other house has a door. Sized from the window (not the content column) so it
+ * reaches both screen edges on desktop too.
+ */
 function HouseRow() {
-  const { width } = useWindowDimensions();
-  const count = Math.ceil(width / (HOUSE + GAP)) + 1;
+  const { width: windowWidth } = useWindowDimensions();
+  const [columnWidth, setColumnWidth] = useState(windowWidth);
+  const sideCount = Math.ceil((windowWidth / STEP - WORD.length) / 2) + 1;
+  const items = [
+    ...Array.from({ length: sideCount }, () => DOOR),
+    ...WORD.map((ch) => LETTER[ch]),
+    ...Array.from({ length: sideCount }, () => DOOR),
+  ];
+  const rowWidth = items.length * STEP - GAP;
   return (
-    <View style={s.street} accessibilityRole="image" accessibilityLabel="Kaam">
-      {Array.from({ length: count }, (_, i) => (
-        <Image
-          key={i}
-          source={require('../../assets/brand/kaam-house-door.png')}
-          style={s.house}
-          resizeMode="contain"
-        />
-      ))}
+    <View onLayout={(e) => setColumnWidth(e.nativeEvent.layout.width)} style={s.streetAnchor}>
+      <View
+        style={[
+          s.street,
+          { width: windowWidth, marginLeft: -(windowWidth - columnWidth) / 2 },
+        ]}
+        accessibilityRole="image"
+        accessibilityLabel="Kaam">
+        <View style={[s.streetInner, { width: rowWidth, marginLeft: (windowWidth - rowWidth) / 2 }]}>
+          {items.map((src, i) => (
+            <Image key={i} source={src} style={s.house} resizeMode="contain" />
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -67,15 +92,9 @@ const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
   hero: { flex: 1, alignItems: 'stretch', justifyContent: 'center' },
-  // Negative horizontal margins pull the row past the screen padding to the edges.
-  street: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    gap: GAP,
-    marginHorizontal: -spacing.md * 2,
-    overflow: 'hidden',
-  },
+  streetAnchor: { width: '100%' },
+  street: { overflow: 'hidden' },
+  streetInner: { flexDirection: 'row', alignItems: 'flex-end', gap: GAP },
   house: { width: HOUSE, height: HOUSE },
   tagline: {
     marginTop: spacing.sm,

@@ -6,6 +6,7 @@ import { authErrorKey, useAuth } from '@/auth/AuthContext';
 import { Button, Field, InlineMessage, Input, Screen } from '@/components/ui';
 import { useI18n, type StringKey } from '@/i18n';
 import { displayPhone } from '@/lib/phone';
+import { requestPushOnGesture } from '@/lib/push';
 import { spacing } from '@/theme';
 
 /**

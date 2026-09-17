@@ -8,6 +8,8 @@ import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
+const LOCKUP_W = 340;
+
 export default function Welcome() {
   const { t } = useI18n();
   const { devBypass } = useAuth();
@@ -19,15 +21,16 @@ export default function Welcome() {
           <LanguageToggle />
         </View>
         <View style={s.hero}>
-          <Image
-            source={require('../../assets/brand/kaam-logo.png')}
-            style={s.logo}
-            resizeMode="contain"
-            accessibilityLabel={t('app.name')}
-          />
-          <Text style={[text.muted, { textAlign: 'center', fontSize: 16, marginTop: spacing.md }]}>
-            {t('app.tagline')}
-          </Text>
+          <View style={s.lockup}>
+            <Image
+              source={require('../../assets/brand/kaam-lockup.png')}
+              style={s.logo}
+              resizeMode="contain"
+              accessibilityLabel={t('app.name')}
+            />
+            {/* The tagline sits under the wordmark, in the lockup's caption style. */}
+            <Text style={s.tagline}>{t('app.tagline')}</Text>
+          </View>
           <View style={s.pills}>
             <Text style={s.pill}>{t('welcome.worker')}</Text>
             <Text style={s.pill}>{t('welcome.customer')}</Text>
@@ -56,7 +59,17 @@ const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: 300, height: 98 },
+  lockup: { width: LOCKUP_W, maxWidth: '100%' },
+  logo: { width: LOCKUP_W, height: Math.round((LOCKUP_W * 190) / 794) },
+  tagline: {
+    marginLeft: Math.round(LOCKUP_W * 0.339),
+    marginTop: 2,
+    color: '#6B4A3A',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+  },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.lg },
   pill: {
     backgroundColor: colors.accentSoft,

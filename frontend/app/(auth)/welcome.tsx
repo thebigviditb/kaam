@@ -66,7 +66,6 @@ export default function Welcome() {
         </View>
         <View style={s.hero}>
           <HouseRow />
-          <Text style={[text.h1, { textAlign: 'center', marginTop: spacing.lg }]}>{t('app.name')}</Text>
           <Text style={s.tagline}>{t('app.tagline')}</Text>
         </View>
         <View style={s.actions}>
@@ -97,7 +96,7 @@ const s = StyleSheet.create({
   streetInner: { flexDirection: 'row', alignItems: 'flex-end', gap: GAP },
   house: { width: HOUSE, height: HOUSE },
   tagline: {
-    marginTop: spacing.sm,
+    marginTop: spacing.lg,
     textAlign: 'center',
     color: '#6B4A3A',
     fontSize: 11.5,

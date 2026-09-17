@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { LanguageToggle } from './LanguageToggle';
 import { useI18n } from '@/i18n';
@@ -10,9 +10,12 @@ import { colors, spacing, text } from '@/theme';
 export function Brand() {
   return (
     <View style={s.wrap}>
-      <View style={s.logo}>
-        <Text style={s.logoText}>K</Text>
-      </View>
+      <Image
+        source={require('../../assets/brand/kaam-mark@3x.png')}
+        style={s.logo}
+        resizeMode="contain"
+        accessibilityLabel="Kaam"
+      />
       <Text style={s.name}>Kaam</Text>
       <View style={{ flex: 1 }} />
       <LanguageToggle />
@@ -28,15 +31,7 @@ export function SmsConsent() {
 
 const s = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  logo: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  logo: { width: 34, height: 34 },
   name: { fontSize: 18, fontWeight: '700', color: colors.text },
   consent: { marginTop: -spacing.sm, marginBottom: spacing.md, lineHeight: 17 },
 });

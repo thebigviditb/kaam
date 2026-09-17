@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -19,11 +19,13 @@ export default function Welcome() {
           <LanguageToggle />
         </View>
         <View style={s.hero}>
-          <View style={s.logo}>
-            <Text style={s.logoText}>{t('app.name')}</Text>
-          </View>
-          <Text style={[text.h1, { textAlign: 'center', marginTop: spacing.md }]}>{t('app.name')}</Text>
-          <Text style={[text.muted, { textAlign: 'center', fontSize: 16, marginTop: spacing.xs }]}>
+          <Image
+            source={require('../../assets/brand/kaam-logo@3x.png')}
+            style={s.logo}
+            resizeMode="contain"
+            accessibilityLabel={t('app.name')}
+          />
+          <Text style={[text.muted, { textAlign: 'center', fontSize: 16, marginTop: spacing.md }]}>
             {t('app.tagline')}
           </Text>
           <View style={s.pills}>
@@ -54,15 +56,7 @@ const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: { color: '#fff', fontSize: 30, fontWeight: '800' },
+  logo: { width: 300, maxWidth: '100%', aspectRatio: 794 / 260 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.lg },
   pill: {
     backgroundColor: colors.accentSoft,

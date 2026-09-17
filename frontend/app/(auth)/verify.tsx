@@ -36,6 +36,7 @@ export default function Verify() {
     setBusy(true);
     setInfo(null);
     try {
+      requestPushOnGesture();
       await confirmSignIn(code);
     } catch (e) {
       showError(e);

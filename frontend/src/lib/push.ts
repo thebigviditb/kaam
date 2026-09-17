@@ -128,6 +128,23 @@ export async function enablePush(): Promise<PushPermission> {
   return 'granted';
 }
 
+/**
+ * "On by default": ask for permission at the first natural tap (finishing onboarding,
+ * completing a login) instead of waiting for the Settings toggle. Browsers only allow the
+ * prompt inside a user gesture, so call this synchronously from a tap handler and don't
+ * await it. Silent when unsupported, already decided, or on iOS outside the home-screen app.
+ */
+export function requestPushOnGesture(): void {
+  try {
+    if (!isPushSupported()) return;
+    if (getPermission() !== 'default') return;
+    if (isIOS() && !isStandalone()) return;
+    void enablePush().catch(() => undefined);
+  } catch {
+    // never let a notification prompt break sign-in or onboarding
+  }
+}
+
 /** Unsubscribe this browser and drop the server-side subscription. Never throws. */
 export async function disablePush(): Promise<void> {
   const sub = await getSubscription();

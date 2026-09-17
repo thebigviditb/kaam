@@ -3,6 +3,8 @@ export const config = {
   cognitoUserPoolId: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID ?? '',
   cognitoClientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? '',
   authDevBypass: process.env.EXPO_PUBLIC_AUTH_DEV_BYPASS === 'true',
+  /** VAPID public key (base64url) for web push; GET /push/public-key when not set at build time. */
+  vapidPublicKey: process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY ?? '',
   /** Public origin used in share links; the current origin on web when not configured. */
   siteUrl: (
     process.env.EXPO_PUBLIC_SITE_URL ||

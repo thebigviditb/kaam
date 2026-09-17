@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     auth_dev_bypass: bool = False
     anthropic_api_key: str = ""
     cron_secret: str = ""
+    vapid_private_key: str = ""
+    vapid_public_key: str = ""
+    vapid_subject: str = "mailto:vidit.batta@gmail.com"
+    site_url: str = "https://kaam-web-tau.vercel.app"
+    # SMS fallback for message notifications; off until the toll-free number is verified.
+    sms_notifications_enabled: bool = False
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
     deletion_grace_days: int = 30
 
     @property

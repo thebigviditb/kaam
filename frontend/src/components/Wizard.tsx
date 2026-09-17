@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUpdateMe } from '@/api/hooks';
 
+import { KaamHouses } from './Brand';
 import { LanguageToggle } from './LanguageToggle';
 import { Button, InlineMessage } from './ui';
 import { useI18n } from '@/i18n';
@@ -43,6 +44,9 @@ export function WizardStep({
     <View style={s.screen}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.scroll}>
         <View style={s.content}>
+          <View style={s.brandRow}>
+            <KaamHouses size={26} gap={4} />
+          </View>
           <View style={s.topRow}>
             {onBack ? (
               <Pressable onPress={onBack} accessibilityRole="button" style={s.back} hitSlop={8}>
@@ -158,6 +162,7 @@ const s = StyleSheet.create({
   backText: { color: colors.accent, fontSize: 16, fontWeight: '600' },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.border, marginVertical: spacing.md, overflow: 'hidden' },
   fill: { height: 6, backgroundColor: colors.accent },
+  brandRow: { marginBottom: spacing.sm },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontSize: 26, fontWeight: '700', color: colors.text, marginBottom: spacing.md, lineHeight: 32 },
   footer: {

@@ -50,6 +50,7 @@ class User(Base):
     # For English readers: show Hinglish messages "original" (as written) or "english".
     # None = not asked yet; the chat asks the first time.
     hinglish_display: Mapped[str | None] = mapped_column(String(16))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     worker_profile: Mapped["WorkerProfile | None"] = relationship(
@@ -124,6 +125,9 @@ class Connection(Base):
 
     customer_last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     worker_last_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Throttle for SMS nudges: last time each side was texted about this conversation.
+    customer_last_sms_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    worker_last_sms_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     customer: Mapped[User] = relationship(foreign_keys=[customer_id])
     worker: Mapped[User] = relationship(foreign_keys=[worker_id])
@@ -187,4 +191,18 @@ class Feedback(Base):
     message: Mapped[str] = mapped_column(Text)
     contact: Mapped[str | None] = mapped_column(String(120))
     page: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class PushSubscription(Base):
+    """A browser/device subscribed to web push for one user."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(Text, unique=True)
+    p256dh: Mapped[str] = mapped_column(Text)
+    auth: Mapped[str] = mapped_column(Text)
+    user_agent: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

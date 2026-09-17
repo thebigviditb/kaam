@@ -12,6 +12,7 @@ import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
+import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
 
@@ -73,6 +74,7 @@ export function CustomerOnboarding() {
 
   const finish = async () => {
     await queueMatchesWelcome();
+    requestPushOnGesture();
     router.replace('/(customer)/matches');
   };
 

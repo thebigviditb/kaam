@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app import storage
 from app.config import get_settings
-from app.models import Connection, Feedback, Message, Report, User, now
+from app.models import Connection, Feedback, Message, PushSubscription, Report, User, now
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +84,9 @@ def purge_user(db: Session, user: User) -> None:
         (Report.reporter_id == user.id) | (Report.reported_user_id == user.id)
     ).delete(synchronize_session=False)
     db.query(Feedback).filter(Feedback.user_id == user.id).delete(synchronize_session=False)
+    db.query(PushSubscription).filter(PushSubscription.user_id == user.id).delete(
+        synchronize_session=False
+    )
     db.query(User).filter(User.referred_by_id == user.id).update(
         {User.referred_by_id: None}, synchronize_session=False
     )

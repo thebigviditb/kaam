@@ -49,12 +49,12 @@ def test_validation(client, worker, customer):
         client.put("/workers/me", json={**WORKER_PROFILE, "days": []}, headers=WORKER).status_code
         == 422
     )
-    # Any city is accepted (normalized)
+    # Only official cities are accepted
     assert (
         client.put(
             "/customers/me", json={**CUSTOMER_PROFILE, "city": "Delhi"}, headers=CUSTOMER
         ).status_code
-        == 200
+        == 422
     )
     assert (
         client.put(
@@ -155,11 +155,18 @@ def test_worker_city_validation(client, worker):
         ).status_code
         == 422
     )
+    # Workers may only choose official cities
     assert (
         client.put(
             "/workers/me", json={**WORKER_PROFILE, "work_cities": ["Delhi"]}, headers=WORKER
         ).status_code
-        == 200
+        == 422
+    )
+    assert (
+        client.put(
+            "/workers/me", json={**WORKER_PROFILE, "city": "Lathrop"}, headers=WORKER
+        ).status_code
+        == 422
     )
     # Normalized and de-duplicated
     r = client.put(

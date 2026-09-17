@@ -114,6 +114,9 @@ preview deploy is a staging deploy.
 | CORS_ORIGINS | `https://kaam-web-tau.vercel.app` (prod) / `https://kaam-web-staging.vercel.app` (staging) |
 | ANTHROPIC_API_KEY | Anthropic API key used for chat translation (create one for Kaam at console.anthropic.com) |
 | CRON_SECRET | random string; Vercel sends it as `Authorization: Bearer` when invoking the daily purge cron |
+| VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY / VAPID_SUBJECT | web push signing keys (the public key is also `EXPO_PUBLIC_VAPID_PUBLIC_KEY` on kaam-web) |
+| TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER | for SMS message nudges |
+| SMS_NOTIFICATIONS_ENABLED | `true` once the toll-free number is verified (Twilio verification HH88ce4be78ae25908b8bffb508916765c) |
 
 **kaam-web**
 

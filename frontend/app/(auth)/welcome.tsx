@@ -8,8 +8,8 @@ import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
-const HOUSE = 76; // rendered width of one letter house
-const GAP = 12;
+const HOUSE = 68; // rendered width of one letter house (4 fit on a 360px-wide phone)
+const GAP = 10;
 
 const LETTER = {
   K: require('../../assets/brand/kaam-house-K.png'),

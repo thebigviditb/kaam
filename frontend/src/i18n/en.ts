@@ -310,6 +310,7 @@ export const en = {
     'deleteAccount.keep': 'Keep my account',
     'deleteAccount.restoredBanner': 'Welcome back! Your account deletion has been cancelled.',
 
+    'city.notInList': 'Please pick a city from the list.',
     'city.placeholder': 'Type a city',
     'city.addPlaceholder': 'Type a city and press Add',
     'city.add': 'Add',

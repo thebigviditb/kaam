@@ -312,6 +312,7 @@ export const hi: Table = {
     'deleteAccount.keep': 'मेरा खाता रखें',
     'deleteAccount.restoredBanner': 'वापसी पर स्वागत है! आपके खाते को हटाना रद्द कर दिया गया है।',
 
+    'city.notInList': 'कृपया सूची में से शहर चुनें।',
     'city.placeholder': 'शहर लिखें',
     'city.addPlaceholder': 'शहर लिखें और जोड़ें दबाएँ',
     'city.add': 'जोड़ें',

@@ -8,8 +8,9 @@ import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
-const HOUSE = 72; // rendered width of one house
-const GAP = 14;
+const HOUSE = 64; // door houses
+const BIG = 96; // the four letter houses in the middle
+const GAP = 12;
 const STEP = HOUSE + GAP;
 
 const DOOR = require('../../assets/brand/kaam-house-door.png');
@@ -28,13 +29,14 @@ const WORD = ['K', 'A', 'A', 'M'] as const;
 function HouseRow() {
   const { width: windowWidth } = useWindowDimensions();
   const [columnWidth, setColumnWidth] = useState(windowWidth);
-  const sideCount = Math.ceil((windowWidth / STEP - WORD.length) / 2) + 1;
-  const items = [
-    ...Array.from({ length: sideCount }, () => DOOR),
-    ...WORD.map((ch) => LETTER[ch]),
-    ...Array.from({ length: sideCount }, () => DOOR),
+  const wordWidth = WORD.length * (BIG + GAP);
+  const sideCount = Math.ceil((windowWidth - wordWidth) / 2 / STEP) + 1;
+  const items: { src: number; size: number }[] = [
+    ...Array.from({ length: sideCount }, () => ({ src: DOOR, size: HOUSE })),
+    ...WORD.map((ch) => ({ src: LETTER[ch], size: BIG })),
+    ...Array.from({ length: sideCount }, () => ({ src: DOOR, size: HOUSE })),
   ];
-  const rowWidth = items.length * STEP - GAP;
+  const rowWidth = items.reduce((w, it) => w + it.size + GAP, 0) - GAP;
   return (
     <View onLayout={(e) => setColumnWidth(e.nativeEvent.layout.width)} style={s.streetAnchor}>
       <View
@@ -45,8 +47,13 @@ function HouseRow() {
         accessibilityRole="image"
         accessibilityLabel="Kaam">
         <View style={[s.streetInner, { width: rowWidth, marginLeft: (windowWidth - rowWidth) / 2 }]}>
-          {items.map((src, i) => (
-            <Image key={i} source={src} style={s.house} resizeMode="contain" />
+          {items.map((it, i) => (
+            <Image
+              key={i}
+              source={it.src}
+              style={{ width: it.size, height: it.size }}
+              resizeMode="contain"
+            />
           ))}
         </View>
       </View>
@@ -94,7 +101,6 @@ const s = StyleSheet.create({
   streetAnchor: { width: '100%' },
   street: { overflow: 'hidden' },
   streetInner: { flexDirection: 'row', alignItems: 'flex-end', gap: GAP },
-  house: { width: HOUSE, height: HOUSE },
   tagline: {
     marginTop: spacing.lg,
     textAlign: 'center',

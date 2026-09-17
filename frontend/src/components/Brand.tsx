@@ -11,7 +11,7 @@ export function Brand() {
   return (
     <View style={s.wrap}>
       <Image
-        source={require('../../assets/brand/kaam-mark@3x.png')}
+        source={require('../../assets/brand/kaam-mark.png')}
         style={s.logo}
         resizeMode="contain"
         accessibilityLabel="Kaam"

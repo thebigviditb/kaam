@@ -20,7 +20,7 @@ export default function Welcome() {
         </View>
         <View style={s.hero}>
           <Image
-            source={require('../../assets/brand/kaam-logo@3x.png')}
+            source={require('../../assets/brand/kaam-logo.png')}
             style={s.logo}
             resizeMode="contain"
             accessibilityLabel={t('app.name')}

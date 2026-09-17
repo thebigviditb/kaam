@@ -284,3 +284,18 @@ class MetaOut(BaseModel):
     times: list[str]
     start_timings: list[str]
     report_reasons: list[str] = REPORT_REASONS
+
+
+class PushKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionIn(BaseModel):
+    endpoint: str = Field(min_length=10, max_length=2000)
+    keys: PushKeys
+    user_agent: str | None = Field(default=None, max_length=255)
+
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str = Field(min_length=10, max_length=2000)

@@ -113,6 +113,7 @@ GET/POST /connections/{id}/messages   POST /connections/{id}/read     (chat, acc
   once under the first Hinglish message; changeable in Settings under Language).
 POST /reports               (reason from /meta.report_reasons; from a chat or a profile page)
 POST /feedback              (Settings → Send feedback)
+GET /push/public-key   POST/DELETE /push/subscriptions   (web push devices per user)
 POST /me/delete  POST /me/restore   (30-day grace; a newer sign-in token auto-restores)
 GET  /internal/purge-deleted-accounts   (Vercel cron, daily 09:00 UTC, Bearer CRON_SECRET)
 POST /media/presign         POST /media              DELETE /media/{id}
@@ -147,6 +148,14 @@ Workflows (all path-filtered, all manually triggerable too):
 Secrets needed in GitHub: `AWS_ROLE_ARN`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
 `VERCEL_PROJECT_ID_WEB`, `VERCEL_PROJECT_ID_API`, `DATABASE_URL_STAGING`,
 `DATABASE_URL_PROD`. See `docs/SETUP.md`.
+
+## 6b. Message notifications
+
+On a new chat message, if the recipient hasn't polled in the last 60 s: web push
+(VAPID, `pywebpush`) to every device they subscribed from the home-screen app / Android.
+If they have no push device at all, an SMS nudge from the Twilio toll-free number,
+at most one per conversation per 30 minutes (`SMS_NOTIFICATIONS_ENABLED`, off until the
+toll-free verification HH88ce4be78ae25908b8bffb508916765c is approved).
 
 ## 7. Voice + SMS phase (planned, not built yet)
 

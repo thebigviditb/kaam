@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from app import notify
 from app import translate as tr
 from app.db import get_db
 from app.deps import get_current_user
@@ -132,6 +133,7 @@ def mine(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    notify.touch_last_seen(db, user)
     col = Connection.worker_id if user.role == "worker" else Connection.customer_id
     rows = _load(db).filter(col == user.id).order_by(Connection.updated_at.desc()).all()
     return [_out(c, user, db, lang) for c in rows]
@@ -189,6 +191,7 @@ def list_messages(
     db: Session = Depends(get_db),
 ):
     c = _chat_connection(db, connection_id, user)
+    notify.touch_last_seen(db, user)
     q = db.query(Message).filter(Message.connection_id == c.id)
     if after:
         anchor = db.get(Message, after)
@@ -228,6 +231,12 @@ def send_message(
     db.add(m)
     db.commit()
     db.refresh(m)
+    try:
+        notify.notify_new_message(db, c, m, user)
+    except Exception:  # noqa: BLE001 - never fail a send because a notification failed
+        import logging
+
+        logging.getLogger(__name__).exception("notify failed")
     return message_out(m, _viewer_lang(user, None))
 
 

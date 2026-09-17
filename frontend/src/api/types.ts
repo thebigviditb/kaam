@@ -271,3 +271,11 @@ export type CustomerFilters = {
   start_timing?: StartTiming;
   q?: string;
 };
+
+// ---- web push ----
+
+export type PushSubscriptionIn = {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  user_agent?: string;
+};

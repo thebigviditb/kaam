@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -8,7 +8,26 @@ import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
-const LOCKUP_W = 340;
+const HOUSE = 72; // rendered width of one house
+const GAP = 14;
+
+/** A street of houses spanning the full screen width, edge to edge. */
+function HouseRow() {
+  const { width } = useWindowDimensions();
+  const count = Math.ceil(width / (HOUSE + GAP)) + 1;
+  return (
+    <View style={s.street} accessibilityRole="image" accessibilityLabel="Kaam">
+      {Array.from({ length: count }, (_, i) => (
+        <Image
+          key={i}
+          source={require('../../assets/brand/kaam-house-door.png')}
+          style={s.house}
+          resizeMode="contain"
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function Welcome() {
   const { t } = useI18n();
@@ -21,12 +40,8 @@ export default function Welcome() {
           <LanguageToggle />
         </View>
         <View style={s.hero}>
-          <Image
-            source={require('../../assets/brand/kaam-houses.png')}
-            style={s.logo}
-            resizeMode="contain"
-            accessibilityLabel={t('app.name')}
-          />
+          <HouseRow />
+          <Text style={[text.h1, { textAlign: 'center', marginTop: spacing.lg }]}>{t('app.name')}</Text>
           <Text style={s.tagline}>{t('app.tagline')}</Text>
         </View>
         <View style={s.actions}>
@@ -51,10 +66,19 @@ export default function Welcome() {
 const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: LOCKUP_W, height: Math.round((LOCKUP_W * 100) / 436) },
+  hero: { flex: 1, alignItems: 'stretch', justifyContent: 'center' },
+  // Negative horizontal margins pull the row past the screen padding to the edges.
+  street: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: GAP,
+    marginHorizontal: -spacing.md * 2,
+    overflow: 'hidden',
+  },
+  house: { width: HOUSE, height: HOUSE },
   tagline: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     textAlign: 'center',
     color: '#6B4A3A',
     fontSize: 11.5,

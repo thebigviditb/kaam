@@ -52,6 +52,7 @@ function useCityTyping({
   onReplace,
   exclude,
   clearAfterCommit,
+  strict = true,
 }: {
   onCommit: (city: string) => void;
   /** A suggestion tapped right after blur: swap the blur-committed text for the picked city. */
@@ -59,8 +60,14 @@ function useCityTyping({
   exclude?: string[];
   /** Multi-value mode: the field empties once a city is accepted. */
   clearAfterCommit?: boolean;
+  /** Only cities from the official list are accepted (workers). */
+  strict?: boolean;
 }) {
   const meta = useMeta();
+  const official = (value: string): string | null => {
+    const all = meta.data?.cities ?? [];
+    return all.find((c) => sameCity(c, value)) ?? null;
+  };
   const [draft, setDraft] = useState('');
   const [focused, setFocused] = useState(false);
   const blurCommitted = useRef<string | null>(null);
@@ -75,9 +82,19 @@ function useCityTyping({
   };
   useEffect(() => clearLinger, []);
 
+  const [rejected, setRejected] = useState(false);
   const commit = (value: string) => {
     clearLinger();
-    const v = clean(value);
+    let v = clean(value);
+    if (strict && v) {
+      const match = official(v);
+      if (!match) {
+        setRejected(true);
+        return; // keep the draft so they can fix it or pick from the list
+      }
+      v = match;
+    }
+    setRejected(false);
     setDraft(clearAfterCommit ? '' : v);
     if (v) onCommit(v);
   };
@@ -86,7 +103,11 @@ function useCityTyping({
 
   return {
     draft,
-    setDraft,
+    setDraft: (v: string) => {
+      setRejected(false);
+      setDraft(v);
+    },
+    rejected,
     suggestions,
     commit,
     pick: (city: string) => {
@@ -152,7 +173,10 @@ export function CityInput({
   autoFocus?: boolean;
 }) {
   const { t } = useI18n();
-  const typing = useCityTyping({ onCommit: (c) => onChange(c || null), onReplace: (_prev, c) => onChange(c) });
+  const typing = useCityTyping({
+    onCommit: (c) => onChange(c || null),
+    onReplace: (_prev, c) => onChange(c),
+  });
   const { setDraft } = typing;
 
   // Keep the field in sync when the parent changes the value (initial load, reset).
@@ -178,6 +202,7 @@ export function CityInput({
         style={[s.input, error && { borderColor: colors.danger }]}
       />
       <Suggestions items={typing.suggestions} onPick={typing.pick} />
+      {typing.rejected ? <Text style={s.reject}>{t('city.notInList')}</Text> : null}
     </View>
   );
 }
@@ -252,11 +277,13 @@ export function CityMultiInput({
         ) : null}
       </View>
       <Suggestions items={typing.suggestions} onPick={typing.pick} />
+      {typing.rejected ? <Text style={s.reject}>{t('city.notInList')}</Text> : null}
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  reject: { color: colors.danger ?? '#B42318', fontSize: 12, marginTop: 4 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

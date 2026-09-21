@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.constants import DAYS, REPORT_REASONS, TAGS, TIMES
+from app.constants import CITIES, DAYS, REPORT_REASONS, TAGS, TIMES
 
 Role = Literal["worker", "customer"]
 Language = Literal["en", "hi"]
@@ -42,6 +42,21 @@ def normalize_city(city: str) -> str:
 
 def _check_city(city: str) -> str:
     return normalize_city(city)
+
+
+_OFFICIAL = {c.lower(): c for c in CITIES}
+
+
+def official_city(city: str) -> str:
+    """Workers may only pick cities from the official list (canonical casing)."""
+    cleaned = " ".join(city.split()).lower()
+    if cleaned not in _OFFICIAL:
+        raise ValueError(f"'{city}' is not a city we serve yet")
+    return _OFFICIAL[cleaned]
+
+
+def _check_official_cities(cities: list[str]) -> list[str]:
+    return list(dict.fromkeys(official_city(c) for c in cities))
 
 
 def _check_cities(cities: list[str]) -> list[str]:
@@ -139,8 +154,8 @@ class WorkerProfileIn(BaseModel):
     _tags = field_validator("tags")(_check_tags)
     _days = field_validator("days")(_check_days)
     _times = field_validator("times")(_check_times)
-    _city = field_validator("city")(_check_city)
-    _work_cities = field_validator("work_cities")(_check_cities)
+    _city = field_validator("city")(official_city)
+    _work_cities = field_validator("work_cities")(_check_official_cities)
 
 
 class WorkerProfileOut(ORM):
@@ -183,7 +198,7 @@ class CustomerProfileIn(BaseModel):
     _tags = field_validator("tags")(_check_tags)
     _days = field_validator("days")(_check_days)
     _times = field_validator("times")(_check_times)
-    _city = field_validator("city")(_check_city)
+    _city = field_validator("city")(official_city)
 
 
 class CustomerProfileOut(ORM):
@@ -284,3 +299,18 @@ class MetaOut(BaseModel):
     times: list[str]
     start_timings: list[str]
     report_reasons: list[str] = REPORT_REASONS
+
+
+class PushKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionIn(BaseModel):
+    endpoint: str = Field(min_length=10, max_length=2000)
+    keys: PushKeys
+    user_agent: str | None = Field(default=None, max_length=255)
+
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str = Field(min_length=10, max_length=2000)

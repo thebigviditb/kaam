@@ -1,12 +1,33 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
+
+const HOUSE = 68; // rendered width of one letter house (4 fit on a 360px-wide phone)
+const GAP = 10;
+
+const LETTER = {
+  K: require('../../assets/brand/kaam-house-K.png'),
+  A: require('../../assets/brand/kaam-house-A.png'),
+  M: require('../../assets/brand/kaam-house-M.png'),
+} as const;
+const WORD = ['K', 'A', 'A', 'M'] as const;
+
+/** Four houses spelling K A A M. */
+function HouseRow() {
+  return (
+    <View style={s.street} accessibilityRole="image" accessibilityLabel="Kaam">
+      {WORD.map((ch, i) => (
+        <Image key={i} source={LETTER[ch]} style={s.house} resizeMode="contain" />
+      ))}
+    </View>
+  );
+}
 
 export default function Welcome() {
   const { t } = useI18n();
@@ -19,17 +40,17 @@ export default function Welcome() {
           <LanguageToggle />
         </View>
         <View style={s.hero}>
-          <View style={s.logo}>
-            <Text style={s.logoText}>{t('app.name')}</Text>
-          </View>
-          <Text style={[text.h1, { textAlign: 'center', marginTop: spacing.md }]}>{t('app.name')}</Text>
-          <Text style={[text.muted, { textAlign: 'center', fontSize: 16, marginTop: spacing.xs }]}>
-            {t('app.tagline')}
-          </Text>
-          <View style={s.pills}>
-            <Text style={s.pill}>{t('welcome.worker')}</Text>
-            <Text style={s.pill}>{t('welcome.customer')}</Text>
-          </View>
+          <HouseRow />
+          <Text style={s.tagline}>{t('app.tagline')}</Text>
+        </View>
+        <View style={s.legal}>
+          <Pressable onPress={() => router.push('/(public)/privacy')} accessibilityRole="link">
+            <Text style={s.legalLink}>{t('legal.privacy')}</Text>
+          </Pressable>
+          <Text style={text.small}>·</Text>
+          <Pressable onPress={() => router.push('/(public)/terms')} accessibilityRole="link">
+            <Text style={s.legalLink}>{t('legal.terms')}</Text>
+          </Pressable>
         </View>
         <View style={s.actions}>
           {devBypass ? (
@@ -53,26 +74,19 @@ export default function Welcome() {
 const s = StyleSheet.create({
   wrap: { flex: 1, minHeight: 520 },
   top: { alignItems: 'flex-end' },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: { color: '#fff', fontSize: 30, fontWeight: '800' },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginTop: spacing.lg },
-  pill: {
-    backgroundColor: colors.accentSoft,
-    color: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    fontSize: 13,
+  hero: { flex: 1, alignItems: 'stretch', justifyContent: 'center' },
+  street: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: GAP },
+  house: { width: HOUSE, height: HOUSE },
+  tagline: {
+    marginTop: spacing.lg,
+    textAlign: 'center',
+    color: '#6B4A3A',
+    fontSize: 11.5,
     fontWeight: '600',
-    overflow: 'hidden',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
   },
-  actions: { gap: spacing.sm, marginTop: spacing.xl },
+  legal: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', alignItems: 'center' },
+  legalLink: { color: colors.muted, fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
+  actions: { gap: spacing.sm, marginTop: spacing.md },
 });

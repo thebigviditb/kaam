@@ -16,6 +16,7 @@ import type {
   Meta,
   PresignRequest,
   PresignResponse,
+  PushSubscriptionIn,
   ReportCreate,
   ReportOut,
   User,
@@ -97,6 +98,13 @@ export const api = {
 
   // feedback
   sendFeedback: (body: FeedbackCreate) => request<FeedbackOut>('POST', '/feedback', { body }),
+
+  // web push
+  getPushPublicKey: () => request<{ public_key: string }>('GET', '/push/public-key'),
+  /** Idempotent per endpoint; the subscription belongs to the calling user. */
+  createPushSubscription: (body: PushSubscriptionIn) => request<void>('POST', '/push/subscriptions', { body }),
+  deletePushSubscription: (endpoint: string) =>
+    request<void>('DELETE', '/push/subscriptions', { body: { endpoint } }),
 };
 
 /** Upload raw bytes to the presigned S3 URL. */

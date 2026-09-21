@@ -1,5 +1,7 @@
 export const en = {
   strings: {
+    'legal.privacy': 'Privacy Policy',
+    'legal.terms': 'Terms of Service',
     'app.name': 'Kaam',
     'app.tagline': 'Trusted household help in the Bay Area',
     'common.ok': 'OK',
@@ -280,10 +282,17 @@ export const en = {
     'share.title': 'Share Kaam',
     'share.hint': 'Know someone who could use Kaam? Send them the link.',
     'share.bannerWorker': "Know somebody who's also looking for work? Share Kaam.",
-    'share.bannerCustomer': 'Know somebody who could use a maid? Share Kaam.',
+    'share.bannerCustomer': 'Know somebody who could use household help? Share Kaam.',
     'share.linkCopied': 'Link copied',
     'share.message':
       'Looking for household help, or for household work, in the Bay Area? Try Kaam: cooks, cleaners and more, in English or Hindi. Sign up with your phone number: {link}',
+    'push.title': 'Notifications',
+    'push.toggle': 'Notify me about new messages',
+    'push.iosHint': 'To get notifications on iPhone, add Kaam to your Home Screen first (Share button, then Add to Home Screen).',
+    'push.blocked': 'Notifications are blocked in your browser settings.',
+    'push.error': 'Could not turn on notifications. Please try again.',
+    'push.prompt': 'Get notified when someone messages you.',
+    'push.turnOn': 'Turn on',
     'settings.title': 'Settings',
     'settings.account': 'Account',
     'settings.hinglish': 'Hinglish messages',
@@ -303,6 +312,7 @@ export const en = {
     'deleteAccount.keep': 'Keep my account',
     'deleteAccount.restoredBanner': 'Welcome back! Your account deletion has been cancelled.',
 
+    'city.notInList': 'Please pick a city from the list.',
     'city.placeholder': 'Type a city',
     'city.addPlaceholder': 'Type a city and press Add',
     'city.add': 'Add',

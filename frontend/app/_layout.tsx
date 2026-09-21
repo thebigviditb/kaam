@@ -4,7 +4,7 @@ import '@/auth/amplify';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -13,11 +13,14 @@ import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ErrorView } from '@/components/ui';
 import { I18nProvider, useI18n } from '@/i18n';
 import { accountRestore } from '@/lib/accountRestore';
+import { capturePushOpenFromUrl, registerServiceWorker, syncPushSubscription, usePushOpen } from '@/lib/push';
 import { captureReferralFromUrl } from '@/lib/referral';
 import { colors } from '@/theme';
 
 // Before the router reads the URL: stash `?ref=` and strip it.
 captureReferralFromUrl();
+// Same for `?open=` (a chat path handed over by the push service worker).
+capturePushOpenFromUrl();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 15_000 } },
@@ -64,12 +67,25 @@ function Gate() {
   }, [serverLang, setLang]);
 
   useRestoreOnSignIn(status, me.isSuccess, me.data?.deletion_scheduled_for ?? null);
+  usePushSetup(status, me.data?.id ?? null);
+
+  // A notification tap lands on the right chat once the user is settled in their tab group
+  // (after the redirects below), so the redirect can't clobber the push.
+  const pushRole =
+    me.data?.onboarded && group === (me.data.role === 'worker' ? '(worker)' : '(customer)') ? me.data.role : null;
+  const openFromPush = useCallback(
+    (to: { pathname: string; params?: Record<string, string> }) => router.push(to as never),
+    [router],
+  );
+  usePushOpen(pushRole, openFromPush);
 
   const meLoading = status === 'signedIn' && me.isPending;
   const booting = !ready || status === 'loading' || meLoading;
 
   useEffect(() => {
     if (booting) return;
+    // Privacy and terms are readable by anyone, signed in or not.
+    if (group === '(public)') return;
     if (status === 'signedOut') {
       if (group !== '(auth)' || leaf === 'choose-role') router.replace('/(auth)/welcome');
       return;
@@ -129,6 +145,20 @@ function useRestoreOnSignIn(status: string, loaded: boolean, scheduledFor: strin
     checked.current = true;
     if (scheduledFor) restoreMut(undefined, { onSuccess: () => accountRestore.set(true) });
   }, [status, loaded, scheduledFor, restoreMut]);
+}
+
+/**
+ * Web push housekeeping: keep the service worker registered across reloads, and after each
+ * sign-in re-register an existing browser subscription for the current user (subscriptions
+ * are per user on the server; another user may have signed in on this device before).
+ */
+function usePushSetup(status: string, userId: string | null) {
+  useEffect(() => {
+    void registerServiceWorker();
+  }, []);
+  useEffect(() => {
+    if (status === 'signedIn' && userId) void syncPushSubscription();
+  }, [status, userId]);
 }
 
 const s = StyleSheet.create({

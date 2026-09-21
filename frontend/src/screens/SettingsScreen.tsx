@@ -9,6 +9,7 @@ import { DeleteAccountModal } from '@/components/DeleteAccountModal';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { HinglishDisplayToggle } from '@/components/HinglishDisplayToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { NotificationsCard } from '@/components/NotificationsCard';
 import { ShareButton } from '@/components/ShareButton';
 import { confirm } from '@/components/notify';
 import { Button, Card, Divider, Screen, Section } from '@/components/ui';
@@ -52,6 +53,7 @@ export function SettingsScreen() {
   const email = me.data?.email ?? auth.email;
   return (
     <Screen title={t('settings.title')}>
+      <NotificationsCard style={s.shareCard} />
       <Card style={s.shareCard}>
         <Text style={text.h3}>{t('share.title')}</Text>
         <Text style={text.muted}>{t('share.hint')}</Text>

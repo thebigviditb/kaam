@@ -6,6 +6,7 @@ import { errorMessage } from '@/api/client';
 import { useDecideConnection, useMe, useMyConnections, useWithdrawConnection } from '@/api/hooks';
 import type { Connection, Role } from '@/api/types';
 import { CustomerCard, PhoneLink, WorkerCard } from '@/components/cards';
+import { PushPromptBanner } from '@/components/PushPromptBanner';
 import { confirm } from '@/components/notify';
 import { Button, EmptyState, ErrorView, InlineMessage, Loading, Row, Screen, Section } from '@/components/ui';
 import { useI18n } from '@/i18n';
@@ -33,6 +34,7 @@ export function ConnectionsScreen() {
 
   return (
     <Screen title={t('conn.title')}>
+      <PushPromptBanner />
       {all.length === 0 ? <EmptyState message={t('conn.empty')} /> : null}
       {chats.length ? (
         <Section title={t('conn.chats')}>

@@ -2,6 +2,8 @@ import type { Table } from './en';
 
 export const hi: Table = {
   strings: {
+    'legal.privacy': 'गोपनीयता नीति',
+    'legal.terms': 'सेवा की शर्तें',
     'app.name': 'काम',
     'app.tagline': 'बे एरिया में भरोसेमंद घरेलू मदद',
     'common.ok': 'ठीक है',
@@ -286,6 +288,13 @@ export const hi: Table = {
     'share.linkCopied': 'लिंक कॉपी हो गया',
     'share.message':
       'Bay Area में घर के काम के लिए मदद चाहिए, या घर का काम ढूँढ रहे हैं? Kaam आज़माएँ: कुक, सफ़ाई और बहुत कुछ, अंग्रेज़ी या हिंदी में। अपने फ़ोन नंबर से साइन अप करें: {link}',
+    'push.title': 'सूचनाएँ',
+    'push.toggle': 'नए संदेश आने पर मुझे बताएँ',
+    'push.iosHint': 'iPhone पर सूचनाएँ पाने के लिए पहले Kaam को अपनी होम स्क्रीन पर जोड़ें (शेयर बटन, फिर Add to Home Screen)।',
+    'push.blocked': 'आपके ब्राउज़र की सेटिंग में सूचनाएँ बंद हैं।',
+    'push.error': 'सूचनाएँ चालू नहीं हो सकीं। कृपया फिर से कोशिश करें।',
+    'push.prompt': 'कोई आपको संदेश भेजे तो सूचना पाएँ।',
+    'push.turnOn': 'चालू करें',
     'settings.title': 'सेटिंग',
     'settings.account': 'खाता',
     'settings.hinglish': 'हिंग्लिश संदेश',
@@ -305,6 +314,7 @@ export const hi: Table = {
     'deleteAccount.keep': 'मेरा खाता रखें',
     'deleteAccount.restoredBanner': 'वापसी पर स्वागत है! आपके खाते को हटाना रद्द कर दिया गया है।',
 
+    'city.notInList': 'कृपया सूची में से शहर चुनें।',
     'city.placeholder': 'शहर लिखें',
     'city.addPlaceholder': 'शहर लिखें और जोड़ें दबाएँ',
     'city.add': 'जोड़ें',

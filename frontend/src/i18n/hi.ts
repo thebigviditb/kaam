@@ -2,6 +2,8 @@ import type { Table } from './en';
 
 export const hi: Table = {
   strings: {
+    'legal.privacy': 'गोपनीयता नीति',
+    'legal.terms': 'सेवा की शर्तें',
     'app.name': 'काम',
     'app.tagline': 'बे एरिया में भरोसेमंद घरेलू मदद',
     'common.ok': 'ठीक है',

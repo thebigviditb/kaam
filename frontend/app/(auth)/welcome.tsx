@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -43,6 +43,15 @@ export default function Welcome() {
           <HouseRow />
           <Text style={s.tagline}>{t('app.tagline')}</Text>
         </View>
+        <View style={s.legal}>
+          <Pressable onPress={() => router.push('/(public)/privacy')} accessibilityRole="link">
+            <Text style={s.legalLink}>{t('legal.privacy')}</Text>
+          </Pressable>
+          <Text style={text.small}>·</Text>
+          <Pressable onPress={() => router.push('/(public)/terms')} accessibilityRole="link">
+            <Text style={s.legalLink}>{t('legal.terms')}</Text>
+          </Pressable>
+        </View>
         <View style={s.actions}>
           {devBypass ? (
             <Button title={t('auth.devSignIn')} onPress={() => router.push('/(auth)/log-in')} />
@@ -77,5 +86,7 @@ const s = StyleSheet.create({
     letterSpacing: 1.1,
     textTransform: 'uppercase',
   },
-  actions: { gap: spacing.sm, marginTop: spacing.xl },
+  legal: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', alignItems: 'center' },
+  legalLink: { color: colors.muted, fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
+  actions: { gap: spacing.sm, marginTop: spacing.md },
 });

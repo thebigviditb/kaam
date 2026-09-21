@@ -84,6 +84,8 @@ function Gate() {
 
   useEffect(() => {
     if (booting) return;
+    // Privacy and terms are readable by anyone, signed in or not.
+    if (group === '(public)') return;
     if (status === 'signedOut') {
       if (group !== '(auth)' || leaf === 'choose-role') router.replace('/(auth)/welcome');
       return;

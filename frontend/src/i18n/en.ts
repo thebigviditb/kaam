@@ -1,5 +1,7 @@
 export const en = {
   strings: {
+    'legal.privacy': 'Privacy Policy',
+    'legal.terms': 'Terms of Service',
     'app.name': 'Kaam',
     'app.tagline': 'Trusted household help in the Bay Area',
     'common.ok': 'OK',

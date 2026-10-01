@@ -5,12 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMe } from '@/api/hooks';
 import { useI18n } from '@/i18n';
-import { shareKaam } from '@/lib/share';
+import { shareWorks } from '@/lib/share';
 import { colors, maxContentWidth, radius, spacing } from '@/theme';
 
 const TOAST_MS = 2500;
 
-/** Accent "Share Kaam" button; opens the share sheet with the user's referral link. */
+/** Accent "Share Works" button; opens the share sheet with the user's referral link. */
 export function ShareButton({ compact, style }: { compact?: boolean; style?: ViewStyle }) {
   const { t, lang } = useI18n();
   const me = useMe();
@@ -28,7 +28,7 @@ export function ShareButton({ compact, style }: { compact?: boolean; style?: Vie
     if (!user || busy) return;
     setBusy(true);
     try {
-      const res = await shareKaam({ role: user.role, lang, referralCode: user.referral_code });
+      const res = await shareWorks({ role: user.role, lang, referralCode: user.referral_code });
       if (res === 'whatsapp') setToast(true);
     } catch {
       // share sheet failures are non-fatal

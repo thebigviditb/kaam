@@ -21,12 +21,12 @@ const tags = `
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Kaam" />
+    <meta name="apple-mobile-web-app-title" content="Works" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Kaam" />
-    <meta property="og:title" content="Kaam: household help in the Bay Area" />
+    <meta property="og:site_name" content="Works" />
+    <meta property="og:title" content="Works: household help in the Bay Area" />
     <meta property="og:description" content="Cooks, cleaners and more. Find work or find help, in English or Hindi. Sign up with your phone number." />
     <meta property="og:url" content="${host}/" />
     <meta property="og:image" content="${host}/icons/icon-512.png" />
@@ -46,7 +46,7 @@ const viewportStyle = `
 if (!html.includes('rel="manifest"')) {
   html = html
     .replace('shrink-to-fit=no"', 'shrink-to-fit=no, viewport-fit=cover"')
-    .replace('<title>Kaam</title>', `<title>Kaam</title>${tags}`)
+    .replace('<title>Works</title>', `<title>Works</title>${tags}`)
     .replace(/(<style id="expo-reset">[\s\S]*?<\/style>)/, `$1${viewportStyle}`);
   writeFileSync(file, html);
   console.log('PWA metadata injected into dist/index.html');

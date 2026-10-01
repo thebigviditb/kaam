@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { KaamHouses } from '@/components/Brand';
+import { WorksHouses } from '@/components/Brand';
 import { Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
@@ -24,7 +24,7 @@ export function LegalScreen({
   return (
     <Screen>
       <Pressable onPress={() => router.replace('/(auth)/welcome')} accessibilityRole="link">
-        <KaamHouses size={26} gap={4} />
+        <WorksHouses size={21} gap={3} />
       </Pressable>
       <Text style={[text.h1, s.title]}>{title}</Text>
       <Text style={text.small}>{updated}</Text>

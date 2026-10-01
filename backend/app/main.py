@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.routers import connections, me, media, profiles, push, reports
 
-app = FastAPI(title="Kaam API", version="0.1.0")
+app = FastAPI(title="Works API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

@@ -95,7 +95,7 @@ def test_sms_fallback_when_no_devices_and_throttled(client, worker, customer):
             client.post(f"/connections/{cid}/messages", json={"body": "second"}, headers=WORKER)
         assert sms.call_count == 1
         to, body = sms.call_args.args
-        assert to == "+14085559999" and body.startswith("Sunita sent you a message on Kaam")
+        assert to == "+14085559999" and body.startswith("Sunita sent you a message on Works")
     finally:
         app.dependency_overrides.pop(get_settings)
 

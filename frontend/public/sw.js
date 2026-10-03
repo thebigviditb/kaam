@@ -1,4 +1,4 @@
-// Kaam service worker: web push only (no caching, no fetch handler).
+// Works service worker: web push only (no caching, no fetch handler).
 // The server sends JSON { title, body, url, tag } where url is a path like /chat/<id>.
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : '' };
   }
-  const title = data.title || 'Kaam';
+  const title = data.title || 'Works';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

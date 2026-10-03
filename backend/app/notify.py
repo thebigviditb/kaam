@@ -91,7 +91,7 @@ def notify_new_message(db: Session, c: Connection, m: Message, sender: User) -> 
     if is_active(recipient):
         return
     sender_profile = sender.worker_profile or sender.customer_profile
-    name = sender_profile.display_name if sender_profile else "Kaam"
+    name = sender_profile.display_name if sender_profile else "Works"
     lang = recipient.preferred_language or "en"
     text = (m.translations or {}).get(lang) or m.body
     payload = {
@@ -113,9 +113,9 @@ def notify_new_message(db: Session, c: Connection, m: Message, sender: User) -> 
         return
     st = get_settings()
     if lang == "hi":
-        body = f"{name} ने आपको Kaam पर संदेश भेजा है। जवाब देने के लिए {st.site_url} खोलें।"
+        body = f"{name} ने आपको Works पर संदेश भेजा है। जवाब देने के लिए {st.site_url} खोलें।"
     else:
-        body = f"{name} sent you a message on Kaam. Open {st.site_url} to reply."
+        body = f"{name} sent you a message on Works. Open {st.site_url} to reply."
     if send_sms(recipient.phone, body + " Reply STOP to opt out."):
         setattr(c, col, now())
         db.commit()

@@ -6,16 +6,18 @@ import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
 const LETTER = {
-  K: require('../../assets/brand/kaam-house-K.png'),
-  A: require('../../assets/brand/kaam-house-A.png'),
-  M: require('../../assets/brand/kaam-house-M.png'),
+  W: require('../../assets/brand/works-house-W.png'),
+  O: require('../../assets/brand/works-house-O.png'),
+  R: require('../../assets/brand/works-house-R.png'),
+  K: require('../../assets/brand/works-house-K.png'),
+  S: require('../../assets/brand/works-house-S.png'),
 } as const;
-const WORD = ['K', 'A', 'A', 'M'] as const;
+const WORD = ['W', 'O', 'R', 'K', 'S'] as const;
 
-/** The Kaam logo: four houses spelling K A A M. */
-export function KaamHouses({ size = 30, gap = 5 }: { size?: number; gap?: number }) {
+/** The Works logo: five houses spelling W O R K S. */
+export function WorksHouses({ size = 24, gap = 4 }: { size?: number; gap?: number }) {
   return (
-    <View style={[s.houses, { gap }]} accessibilityRole="image" accessibilityLabel="Kaam">
+    <View style={[s.houses, { gap }]} accessibilityRole="image" accessibilityLabel="Works">
       {WORD.map((ch, i) => (
         <Image key={i} source={LETTER[ch]} style={{ width: size, height: size }} resizeMode="contain" />
       ))}
@@ -28,7 +30,7 @@ export function KaamHouses({ size = 30, gap = 5 }: { size?: number; gap?: number
 export function Brand() {
   return (
     <View style={s.wrap}>
-      <KaamHouses />
+      <WorksHouses />
       <View style={{ flex: 1 }} />
       <LanguageToggle />
     </View>

@@ -11,7 +11,7 @@ const KEY = 'kaam.shareBannerDismissedAt';
 const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
 
 /**
- * Slim "Know somebody who…? Share Kaam." bar for the top of Matches. Dismissing hides it
+ * Slim "Know somebody who…? Share Works." bar for the top of Matches. Dismissing hides it
  * for 14 days (timestamp in AsyncStorage), after which it returns.
  */
 export function ShareBanner({ role }: { role: 'worker' | 'customer' }) {

@@ -8,20 +8,22 @@ import { Button, Screen } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { colors, spacing, text } from '@/theme';
 
-const HOUSE = 68; // rendered width of one letter house (4 fit on a 360px-wide phone)
-const GAP = 10;
+const HOUSE = 54; // rendered width of one letter house (5 fit on a 360px-wide phone)
+const GAP = 8;
 
 const LETTER = {
-  K: require('../../assets/brand/kaam-house-K.png'),
-  A: require('../../assets/brand/kaam-house-A.png'),
-  M: require('../../assets/brand/kaam-house-M.png'),
+  W: require('../../assets/brand/works-house-W.png'),
+  O: require('../../assets/brand/works-house-O.png'),
+  R: require('../../assets/brand/works-house-R.png'),
+  K: require('../../assets/brand/works-house-K.png'),
+  S: require('../../assets/brand/works-house-S.png'),
 } as const;
-const WORD = ['K', 'A', 'A', 'M'] as const;
+const WORD = ['W', 'O', 'R', 'K', 'S'] as const;
 
-/** Four houses spelling K A A M. */
+/** Five houses spelling W O R K S. */
 function HouseRow() {
   return (
-    <View style={s.street} accessibilityRole="image" accessibilityLabel="Kaam">
+    <View style={s.street} accessibilityRole="image" accessibilityLabel="Works">
       {WORD.map((ch, i) => (
         <Image key={i} source={LETTER[ch]} style={s.house} resizeMode="contain" />
       ))}

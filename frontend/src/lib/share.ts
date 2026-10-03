@@ -32,18 +32,18 @@ async function copyToClipboard(value: string): Promise<boolean> {
 }
 
 /**
- * Share the Kaam invite with the user's referral link.
+ * Share the Works invite with the user's referral link.
  * Web: the native share sheet (iOS Safari / home-screen app) when available, otherwise
  * WhatsApp in a new tab plus the link on the clipboard. Native: the OS share sheet.
  * Returns 'whatsapp' when the caller should tell the user the link was copied.
  */
-export async function shareKaam(args: { role: Role; lang: Language; referralCode: string }): Promise<ShareResult> {
+export async function shareWorks(args: { role: Role; lang: Language; referralCode: string }): Promise<ShareResult> {
   const { text, link } = shareMessage(args);
   if (Platform.OS === 'web') {
     const nav = typeof navigator !== 'undefined' ? navigator : undefined;
     if (nav?.share) {
       try {
-        await nav.share({ title: 'Kaam', text, url: link });
+        await nav.share({ title: 'Works', text, url: link });
         return 'shared';
       } catch (e) {
         // AbortError = user closed the sheet; anything else falls back below.

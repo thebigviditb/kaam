@@ -89,7 +89,7 @@ def _connections_for(db: Session, viewer: User) -> dict[str, Connection]:
 
 def _check_other(tags: list[str], other_text: str | None) -> None:
     if "other" in tags and not other_text:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "describe the 'other' work")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "describe the 'other' work")
 
 
 # ---- worker profile -------------------------------------------------------

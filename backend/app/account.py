@@ -63,8 +63,8 @@ def _delete_cognito_user(sub: str) -> None:
         pass
 
 
-def purge_user(db: Session, user: User) -> None:
-    """Hard-delete one account everywhere. Order matters for foreign keys."""
+def delete_app_data(db: Session, user: User) -> None:
+    """Hard-delete one account's Kaam data, keeping its Cognito login. Order matters (FKs)."""
     conn_ids = [
         c.id
         for c in db.query(Connection)
@@ -95,10 +95,19 @@ def purge_user(db: Session, user: User) -> None:
             storage.delete_object(m.s3_key)
         except Exception:  # noqa: BLE001 - keep purging
             log.exception("could not delete media %s", m.s3_key)
-    sub = user.cognito_sub
     db.delete(user)  # cascades profiles + media rows
     db.commit()
+
+
+def purge_user(db: Session, user: User) -> None:
+    """Hard-delete one account everywhere."""
+    sub = user.cognito_sub
+    delete_app_data(db, user)
     _delete_cognito_user(sub)
+
+
+def is_preview_phone(phone: str | None) -> bool:
+    return bool(phone) and phone in get_settings().preview_phone_list
 
 
 def purge_due(db: Session) -> list[str]:

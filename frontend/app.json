@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Works",
+    "name": "Kaam",
     "slug": "kaam",
     "version": "1.0.0",
     "scheme": "kaam",
@@ -35,7 +35,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Works uses your photos and videos to show your work on your profile."
+          "photosPermission": "Kaam uses your photos and videos to show your work on your profile."
         }
       ]
     ],

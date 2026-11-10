@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUpdateMe } from '@/api/hooks';
 
-import { WorksHouses } from './Brand';
+import { KaamHouses } from './Brand';
 import { LanguageToggle } from './LanguageToggle';
 import { Button, InlineMessage } from './ui';
 import { useI18n } from '@/i18n';
@@ -45,7 +45,7 @@ export function WizardStep({
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.scroll}>
         <View style={s.content}>
           <View style={s.brandRow}>
-            <WorksHouses size={21} gap={3} />
+            <KaamHouses size={26} gap={4} />
           </View>
           <View style={s.topRow}>
             {onBack ? (

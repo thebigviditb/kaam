@@ -11,12 +11,8 @@ def get_current_user(claims: Claims = Depends(get_claims), db: Session = Depends
     user = db.query(User).filter(User.cognito_sub == claims.sub).one_or_none()
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "user not registered; call POST /me")
-    # Preview accounts start over on every fresh login: a token issued after the account was
-    # created means a new sign-in, so wipe it and answer as for a brand-new user.
     if claims.issued_at and account.is_preview_phone(user.phone):
-        if claims.issued_at > account.as_utc(user.created_at).timestamp():
-            account.delete_app_data(db, user)
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "user not registered; call POST /me")
+        account.start_preview_over_on_new_login(db, user, claims.issued_at)
     # Logging in again cancels a scheduled deletion: a token issued after the request
     # means a fresh sign-in (the app signs users out when they request deletion).
     if user.deletion_requested_at and claims.issued_at:

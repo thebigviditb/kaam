@@ -4,16 +4,15 @@ import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { keys, useMeta, useUpsertWorkerProfile } from '@/api/hooks';
+import { keys, useMeta, useUpdateMe, useUpsertWorkerProfile } from '@/api/hooks';
 import { DAYS, TIMES, type User } from '@/api/types';
 import { ChipGroup } from '@/components/Chip';
 import { CityInput, CityMultiInput, sameCityName } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading, Row } from '@/components/ui';
 import { WizardStep } from '@/components/Wizard';
-import { InstallGuide } from '@/components/InstallGuide';
 import { useI18n } from '@/i18n';
-import { installBrowser } from '@/lib/install';
+import { installTarget } from '@/lib/install';
 import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
@@ -26,12 +25,13 @@ export function WorkerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
   const upsert = useUpsertWorkerProfile();
+  const updateMe = useUpdateMe();
   const qc = useQueryClient();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
-  // iPhone/iPad in the browser get one more step: add Kaam to the Home Screen.
-  const [browser] = useState(installBrowser);
+  // In a browser (not the Home Screen app) one more step follows: add Kaam to the Home Screen.
+  const [browser] = useState(installTarget);
   const TOTAL = browser ? 7 : 6;
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
@@ -97,6 +97,17 @@ export function WorkerOnboarding() {
     await queueMatchesWelcome();
     requestPushOnGesture();
     router.replace('/(worker)/matches');
+  };
+
+  // The install step lives on the account so a laptop sign-up can finish it on the phone.
+  const toInstall = async () => {
+    setError(null);
+    try {
+      await updateMe.mutateAsync({ install_pending: true });
+      router.replace('/(onboarding)/install');
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   };
 
   switch (step) {
@@ -210,29 +221,19 @@ export function WorkerOnboarding() {
           </Row>
         </WizardStep>
       );
-    case 6:
+    default:
       return (
         <WizardStep
           step={6}
           total={TOTAL}
           title={t('onb.w.mediaTitle')}
           hint={t('onb.w.mediaHint')}
-          onNext={browser ? next : finish}
+          error={error}
+          onNext={browser ? toInstall : finish}
           nextLabel={browser ? undefined : t('onb.w.finish')}
-          secondary={{ label: t('common.skip'), onPress: browser ? next : finish }}>
+          nextLoading={updateMe.isPending}
+          secondary={{ label: t('common.skip'), onPress: browser ? toInstall : finish }}>
           <MediaSection />
-        </WizardStep>
-      );
-    default:
-      return (
-        <WizardStep
-          step={7}
-          total={TOTAL}
-          title={t('install.title')}
-          hint={t('install.hint')}
-          onNext={finish}
-          nextLabel={t('onb.w.finish')}>
-          {browser ? <InstallGuide browser={browser} /> : null}
         </WizardStep>
       );
   }

@@ -8,11 +8,12 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useMe, useRefreshTranslationsOnLangChange, useRestoreMe } from '@/api/hooks';
+import { useMe, useRefreshTranslationsOnLangChange, useRestoreMe, useUpdateMe } from '@/api/hooks';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ErrorView } from '@/components/ui';
 import { I18nProvider, useI18n } from '@/i18n';
 import { accountRestore } from '@/lib/accountRestore';
+import { installTarget } from '@/lib/install';
 import { capturePushOpenFromUrl, registerServiceWorker, syncPushSubscription, usePushOpen } from '@/lib/push';
 import { captureReferralFromUrl } from '@/lib/referral';
 import { colors } from '@/theme';
@@ -46,6 +47,7 @@ export default function RootLayout() {
  *   signed out            → (auth)
  *   no app user (404 /me) → (auth)/choose-role   (POST /me with role + phone)
  *   not onboarded         → (onboarding)/<role>  (the questionnaire)
+ *   install pending       → (onboarding)/install (Home Screen steps or, on a laptop, a QR code)
  *   onboarded             → (worker) or (customer) tabs
  * The onboarding group stays reachable once onboarded so the worker's optional
  * media step can finish after the profile PUT flips `onboarded`.
@@ -68,6 +70,7 @@ function Gate() {
 
   useRestoreOnSignIn(status, me.isSuccess, me.data?.deletion_scheduled_for ?? null);
   usePushSetup(status, me.data?.id ?? null);
+  useClearInstallWhenInstalled(me.data?.install_pending ?? false);
 
   // A notification tap lands on the right chat once the user is settled in their tab group
   // (after the redirects below), so the redirect can't clobber the push.
@@ -102,6 +105,10 @@ function Gate() {
       }
       return;
     }
+    if (me.data.install_pending && installTarget() !== null) {
+      if (!(group === '(onboarding)' && leaf === 'install')) router.replace('/(onboarding)/install');
+      return;
+    }
     const wanted = role === 'worker' ? '(worker)' : '(customer)';
     if (group !== wanted && group !== '(onboarding)') {
       router.replace(role === 'worker' ? '/(worker)/matches' : '/(customer)/matches');
@@ -122,6 +129,18 @@ function Gate() {
       ) : null}
     </View>
   );
+}
+
+/** Running from the Home Screen means the install step is done: clear it once. */
+function useClearInstallWhenInstalled(pending: boolean) {
+  const updateMe = useUpdateMe();
+  const sent = useRef(false);
+  const mutate = updateMe.mutate;
+  useEffect(() => {
+    if (!pending || sent.current || installTarget() !== null) return;
+    sent.current = true;
+    mutate({ install_pending: false }, { onError: () => (sent.current = false) });
+  }, [pending, mutate]);
 }
 
 /**

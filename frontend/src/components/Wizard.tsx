@@ -31,7 +31,8 @@ export function WizardStep({
   hint?: string;
   error?: string | null;
   onBack?: () => void;
-  onNext: () => void;
+  /** Omit for a step whose only way on is `secondary` (e.g. "Skip for now"). */
+  onNext?: () => void;
   nextLabel?: string;
   nextLoading?: boolean;
   secondary?: { label: string; onPress: () => void };
@@ -73,14 +74,21 @@ export function WizardStep({
       <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <View style={s.footerInner}>
           {secondary ? (
-            <Button title={secondary.label} variant="ghost" onPress={secondary.onPress} />
+            <Button
+              title={secondary.label}
+              variant="ghost"
+              onPress={secondary.onPress}
+              style={onNext ? undefined : { flex: 1 }}
+            />
           ) : null}
-          <Button
-            title={nextLabel ?? t('common.next')}
-            onPress={onNext}
-            loading={nextLoading}
-            style={{ flex: 1 }}
-          />
+          {onNext ? (
+            <Button
+              title={nextLabel ?? t('common.next')}
+              onPress={onNext}
+              loading={nextLoading}
+              style={{ flex: 1 }}
+            />
+          ) : null}
         </View>
       </View>
     </View>

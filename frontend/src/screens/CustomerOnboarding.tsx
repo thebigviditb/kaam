@@ -4,16 +4,15 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { keys, useMeta, useUpsertCustomerProfile } from '@/api/hooks';
+import { keys, useMeta, useUpdateMe, useUpsertCustomerProfile } from '@/api/hooks';
 import { DAYS, PAY_TYPES, START_TIMINGS, TIMES, type PayType, type StartTiming, type User } from '@/api/types';
 import { ChipGroup, ChipRadio } from '@/components/Chip';
 import { CityInput } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
-import { InstallGuide } from '@/components/InstallGuide';
 import { useI18n } from '@/i18n';
-import { installBrowser } from '@/lib/install';
+import { installTarget } from '@/lib/install';
 import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
@@ -26,12 +25,13 @@ export function CustomerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
   const upsert = useUpsertCustomerProfile();
+  const updateMe = useUpdateMe();
   const qc = useQueryClient();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
-  // iPhone/iPad in the browser get one more step: add Kaam to the Home Screen.
-  const [browser] = useState(installBrowser);
+  // In a browser (not the Home Screen app) one more step follows: add Kaam to the Home Screen.
+  const [browser] = useState(installTarget);
   const TOTAL = browser ? 7 : 6;
   const [name, setName] = useState('');
   const [city, setCity] = useState<string | null>(null);
@@ -82,6 +82,17 @@ export function CustomerOnboarding() {
     await queueMatchesWelcome();
     requestPushOnGesture();
     router.replace('/(customer)/matches');
+  };
+
+  // The install step lives on the account so a laptop sign-up can finish it on the phone.
+  const toInstall = async () => {
+    setError(null);
+    try {
+      await updateMe.mutateAsync({ install_pending: true });
+      router.replace('/(onboarding)/install');
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   };
 
   switch (step) {
@@ -198,29 +209,19 @@ export function CustomerOnboarding() {
           </Field>
         </WizardStep>
       );
-    case 6:
+    default:
       return (
         <WizardStep
           step={6}
           total={TOTAL}
           title={t('onb.c.mediaTitle')}
           hint={t('onb.c.mediaHint')}
-          onNext={browser ? next : finish}
+          error={error}
+          onNext={browser ? toInstall : finish}
           nextLabel={browser ? undefined : t('onb.c.finish')}
-          secondary={{ label: t('common.skip'), onPress: browser ? next : finish }}>
+          nextLoading={updateMe.isPending}
+          secondary={{ label: t('common.skip'), onPress: browser ? toInstall : finish }}>
           <MediaSection />
-        </WizardStep>
-      );
-    default:
-      return (
-        <WizardStep
-          step={7}
-          total={TOTAL}
-          title={t('install.title')}
-          hint={t('install.hint')}
-          onNext={finish}
-          nextLabel={t('onb.c.finish')}>
-          {browser ? <InstallGuide browser={browser} /> : null}
         </WizardStep>
       );
   }

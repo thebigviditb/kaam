@@ -80,6 +80,8 @@ def update_me(
         user.preferred_language = body.preferred_language
     if body.hinglish_display is not None:
         user.hinglish_display = body.hinglish_display
+    if body.install_pending is not None:
+        user.install_pending = body.install_pending
     if not user.phone:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "phone is required")
     db.commit()

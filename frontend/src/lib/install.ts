@@ -1,17 +1,25 @@
-import { isIOS, isStandalone } from '@/lib/push';
+import { Platform } from 'react-native';
+
+import { isAndroid, isIOS, isStandalone } from '@/lib/push';
 
 /**
- * Which "add to Home Screen" instructions fit this browser. iPhone and iPad only for now:
- * - 'safari': Safari 18 and older, the Share button sits in the bottom bar.
+ * Which "add Kaam to your Home Screen" screen fits this device:
+ * - 'desktop': a laptop or desktop; shows a QR code so the person finishes on their phone.
+ * - 'android': Chrome-style ⋮ menu, then "Add to Home screen" / "Install app".
+ * - 'safari': Safari 18 and older on iPhone/iPad, Share sits in the bottom bar.
  * - 'safari26': Safari 26+, Share is behind the ••• button in the default compact bar.
  * - 'chrome': Chrome on iOS, Share sits at the top right of the address bar.
- * - 'inApp': a WhatsApp/Instagram/Facebook style in-app browser (no "Safari/" token),
+ * - 'inApp': an iOS in-app browser (WhatsApp/Instagram/Facebook style, no "Safari/" token),
  *   which cannot add to the Home Screen, so the person must open the page in Safari first.
+ * null when Kaam is already running from the Home Screen (or off web): nothing to do.
  */
-export type InstallBrowser = 'safari' | 'safari26' | 'chrome' | 'inApp';
+export type InstallTarget = 'desktop' | 'android' | 'safari' | 'safari26' | 'chrome' | 'inApp';
+export type PhoneBrowser = Exclude<InstallTarget, 'desktop'>;
 
-export function installBrowser(): InstallBrowser | null {
-  if (!isIOS() || isStandalone()) return null;
+export function installTarget(): InstallTarget | null {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined' || isStandalone()) return null;
+  if (isAndroid()) return 'android';
+  if (!isIOS()) return 'desktop';
   const ua = navigator.userAgent || '';
   if (/CriOS\//.test(ua)) return 'chrome';
   if (!/Safari\//.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua)) return 'inApp';

@@ -9,6 +9,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 import boto3
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import storage
@@ -108,6 +109,22 @@ def purge_user(db: Session, user: User) -> None:
 
 def is_preview_phone(phone: str | None) -> bool:
     return bool(phone) and phone in get_settings().preview_phone_list
+
+
+def start_preview_over_on_new_login(db: Session, user: User, issued_at: int) -> None:
+    """Preview accounts start over on every new sign-in: wipe the account and answer as for a
+    brand-new user (404). A sign-in while the install step is pending is the laptop-to-phone
+    handoff, so the account is kept. The first sign-in seen (the one that created the account)
+    and further requests in a known session change nothing.
+    """
+    seen = user.preview_login_iat
+    if seen is not None and issued_at <= seen:
+        return
+    if seen is not None and not user.install_pending:
+        delete_app_data(db, user)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "user not registered; call POST /me")
+    user.preview_login_iat = issued_at
+    db.commit()
 
 
 def purge_due(db: Session) -> list[str]:

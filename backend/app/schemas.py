@@ -81,6 +81,7 @@ class UserOut(ORM):
     onboarded: bool = False
     deletion_scheduled_for: datetime | None = None
     hinglish_display: HinglishDisplay | None = None
+    install_pending: bool = False
 
 
 class UserCreate(BaseModel):
@@ -94,6 +95,7 @@ class UserUpdate(BaseModel):
     phone: str | None = Field(default=None, min_length=7, max_length=32)
     preferred_language: Language | None = None
     hinglish_display: HinglishDisplay | None = None
+    install_pending: bool | None = None
 
 
 # ---- media ----

@@ -34,6 +34,8 @@ export type User = {
   deletion_scheduled_for: string | null;
   /** English readers only: show Hinglish messages translated ('english') or as written ('original'). */
   hinglish_display: HinglishDisplay | null;
+  /** Onboarding ended on the "add to Home Screen" step and it is not done or skipped yet. */
+  install_pending: boolean;
 };
 
 export type UserCreate = {
@@ -48,6 +50,7 @@ export type UserUpdate = {
   phone?: string;
   preferred_language?: Language;
   hinglish_display?: HinglishDisplay;
+  install_pending?: boolean;
 };
 
 // ---- media ----

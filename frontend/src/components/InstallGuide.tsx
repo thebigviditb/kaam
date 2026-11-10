@@ -43,6 +43,9 @@ const s = StyleSheet.create({
   menuLabel: { fontSize: 17, color: colors.text },
   choices: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   or: { fontSize: 17, color: colors.muted },
+  pageMenu: { width: 26, gap: 5 },
+  bar: { height: 3, borderRadius: 1.5, backgroundColor: colors.text },
+  barShort: { width: '60%' },
   addLabel: { fontSize: 17, fontWeight: '600', color: IOS_BLUE },
   installLabel: { fontSize: 17, fontWeight: '600', color: ANDROID_BLUE },
   appIcon: { width: 56, height: 56, borderRadius: 13 },
@@ -52,13 +55,24 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <View style={s.pill}>{children}</View>;
 }
 
+/** Safari's page menu button: two lines with a shorter one underneath (no icon font has it). */
+function PageMenuIcon() {
+  return (
+    <View style={s.pageMenu}>
+      <View style={s.bar} />
+      <View style={s.bar} />
+      <View style={[s.bar, s.barShort]} />
+    </View>
+  );
+}
+
 /** Pictures of the phone's own buttons; `or` is the translated word between two choices. */
 function pictures(or: string) {
   return {
-    shareOrMore: (
+    pageMenuOrMore: (
       <View style={s.choices}>
         <Pill>
-          <Ionicons name="share-outline" size={30} color={IOS_BLUE} />
+          <PageMenuIcon />
         </Pill>
         <Text style={s.or}>{or}</Text>
         <Pill>
@@ -119,13 +133,16 @@ function stepsFor(browser: PhoneBrowser, PICTURES: ReturnType<typeof pictures>):
   }
   const first: Step[] =
     browser === 'chrome'
-        ? [{ title: 'install.tapShareTop', picture: PICTURES.share }]
-        : browser === 'inApp'
-          ? [
-              { title: 'install.openSafari', hint: 'install.openSafariHint', picture: PICTURES.safari },
-              { title: 'install.tapShare', hint: 'install.tapShareHint', picture: PICTURES.share },
-            ]
-          : [{ title: 'install.tapShareOrMore', hint: 'install.tapShareOrMoreHint', picture: PICTURES.shareOrMore }];
+      ? [{ title: 'install.tapShareTop', picture: PICTURES.share }]
+      : browser === 'inApp'
+        ? [
+            { title: 'install.openSafari', hint: 'install.openSafariHint', picture: PICTURES.safari },
+            { title: 'install.tapShare', hint: 'install.tapShareHint', picture: PICTURES.share },
+          ]
+        : [
+            { title: 'install.tapMenuOrMore', picture: PICTURES.pageMenuOrMore },
+            { title: 'install.tapShare', picture: PICTURES.share },
+          ];
   return [
     ...first,
     { title: 'install.tapAddHome', hint: 'install.tapAddHomeHint', picture: PICTURES.addHome },

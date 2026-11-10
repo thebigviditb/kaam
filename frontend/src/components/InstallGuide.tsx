@@ -41,6 +41,8 @@ const s = StyleSheet.create({
     backgroundColor: IOS_GRAY,
   },
   menuLabel: { fontSize: 17, color: colors.text },
+  choices: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  or: { fontSize: 17, color: colors.muted },
   addLabel: { fontSize: 17, fontWeight: '600', color: IOS_BLUE },
   installLabel: { fontSize: 17, fontWeight: '600', color: ANDROID_BLUE },
   appIcon: { width: 56, height: 56, borderRadius: 13 },
@@ -50,53 +52,62 @@ function Pill({ children }: { children: React.ReactNode }) {
   return <View style={s.pill}>{children}</View>;
 }
 
-const PICTURES = {
-  more: (
-    <Pill>
-      <Ionicons name="ellipsis-horizontal" size={30} color={colors.text} />
-    </Pill>
-  ),
-  share: (
-    <Pill>
-      <Ionicons name="share-outline" size={30} color={IOS_BLUE} />
-    </Pill>
-  ),
-  safari: (
-    <Pill>
-      <Ionicons name="compass-outline" size={30} color={IOS_BLUE} />
-    </Pill>
-  ),
-  addHome: (
-    <Pill>
-      <Text style={s.menuLabel}>Add to Home Screen</Text>
-      <MaterialCommunityIcons name="plus-box-outline" size={26} color={colors.text} />
-    </Pill>
-  ),
-  add: (
-    <Pill>
-      <Text style={s.addLabel}>Add</Text>
-    </Pill>
-  ),
-  menu: (
-    <Pill>
-      <MaterialCommunityIcons name="dots-vertical" size={30} color={colors.text} />
-    </Pill>
-  ),
-  addHomeAndroid: (
-    <Pill>
-      <MaterialCommunityIcons name="cellphone-arrow-down" size={26} color={colors.text} />
-      <Text style={s.menuLabel}>Add to home screen</Text>
-    </Pill>
-  ),
-  install: (
-    <Pill>
-      <Text style={s.installLabel}>Install</Text>
-    </Pill>
-  ),
-  app: <Image source={require('../../assets/icon.png')} style={s.appIcon} accessibilityIgnoresInvertColors />,
-};
+/** Pictures of the phone's own buttons; `or` is the translated word between two choices. */
+function pictures(or: string) {
+  return {
+    shareOrMore: (
+      <View style={s.choices}>
+        <Pill>
+          <Ionicons name="share-outline" size={30} color={IOS_BLUE} />
+        </Pill>
+        <Text style={s.or}>{or}</Text>
+        <Pill>
+          <Ionicons name="ellipsis-horizontal" size={30} color={colors.text} />
+        </Pill>
+      </View>
+    ),
+    share: (
+      <Pill>
+        <Ionicons name="share-outline" size={30} color={IOS_BLUE} />
+      </Pill>
+    ),
+    safari: (
+      <Pill>
+        <Ionicons name="compass-outline" size={30} color={IOS_BLUE} />
+      </Pill>
+    ),
+    addHome: (
+      <Pill>
+        <Text style={s.menuLabel}>Add to Home Screen</Text>
+        <MaterialCommunityIcons name="plus-box-outline" size={26} color={colors.text} />
+      </Pill>
+    ),
+    add: (
+      <Pill>
+        <Text style={s.addLabel}>Add</Text>
+      </Pill>
+    ),
+    menu: (
+      <Pill>
+        <MaterialCommunityIcons name="dots-vertical" size={30} color={colors.text} />
+      </Pill>
+    ),
+    addHomeAndroid: (
+      <Pill>
+        <MaterialCommunityIcons name="cellphone-arrow-down" size={26} color={colors.text} />
+        <Text style={s.menuLabel}>Add to home screen</Text>
+      </Pill>
+    ),
+    install: (
+      <Pill>
+        <Text style={s.installLabel}>Install</Text>
+      </Pill>
+    ),
+    app: <Image source={require('../../assets/icon.png')} style={s.appIcon} accessibilityIgnoresInvertColors />,
+  };
+}
 
-function stepsFor(browser: PhoneBrowser): Step[] {
+function stepsFor(browser: PhoneBrowser, PICTURES: ReturnType<typeof pictures>): Step[] {
   if (browser === 'android') {
     // Android's Home Screen app shares the browser's login, so there is no "log in again".
     return [
@@ -107,19 +118,14 @@ function stepsFor(browser: PhoneBrowser): Step[] {
     ];
   }
   const first: Step[] =
-    browser === 'safari26'
-      ? [
-          { title: 'install.tapMore', picture: PICTURES.more },
-          { title: 'install.tapShare', picture: PICTURES.share },
-        ]
-      : browser === 'chrome'
+    browser === 'chrome'
         ? [{ title: 'install.tapShareTop', picture: PICTURES.share }]
         : browser === 'inApp'
           ? [
               { title: 'install.openSafari', hint: 'install.openSafariHint', picture: PICTURES.safari },
               { title: 'install.tapShare', hint: 'install.tapShareHint', picture: PICTURES.share },
             ]
-          : [{ title: 'install.tapShareBottom', picture: PICTURES.share }];
+          : [{ title: 'install.tapShareOrMore', hint: 'install.tapShareOrMoreHint', picture: PICTURES.shareOrMore }];
   return [
     ...first,
     { title: 'install.tapAddHome', hint: 'install.tapAddHomeHint', picture: PICTURES.addHome },
@@ -133,7 +139,7 @@ export function InstallGuide({ browser }: { browser: PhoneBrowser }) {
   const { t } = useI18n();
   return (
     <View style={s.list} testID="install-guide">
-      {stepsFor(browser).map((step, i) => (
+      {stepsFor(browser, pictures(t('common.or'))).map((step, i) => (
         <View key={step.title} style={s.step}>
           <View style={s.number}>
             <Text style={s.numberText}>{i + 1}</Text>

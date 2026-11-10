@@ -11,12 +11,15 @@ import { CityInput } from '@/components/CityInput';
 import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
+import { InstallGuide } from '@/components/InstallGuide';
 import { useI18n } from '@/i18n';
+import { installBrowser } from '@/lib/install';
 import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
 
-const TOTAL = 6;
+/** The profile is saved at this step; there is no going back past it. */
+const SAVE_STEP = 5;
 
 /** The household's need, one question per screen. PUT /customers/me happens at step 5; step 6 is optional media. */
 export function CustomerOnboarding() {
@@ -27,6 +30,9 @@ export function CustomerOnboarding() {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
+  // iPhone/iPad in the browser get one more step: add Kaam to the Home Screen.
+  const [browser] = useState(installBrowser);
+  const TOTAL = browser ? 7 : 6;
   const [name, setName] = useState('');
   const [city, setCity] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
@@ -45,7 +51,7 @@ export function CustomerOnboarding() {
     setError(null);
     setStep((s) => s + 1);
   };
-  const back = step > 1 && step < TOTAL ? () => setStep((s) => s - 1) : undefined;
+  const back = step > 1 && step <= SAVE_STEP ? () => setStep((s) => s - 1) : undefined;
 
   const save = async () => {
     const amount = pay.trim() ? Number(pay) : null;
@@ -192,17 +198,29 @@ export function CustomerOnboarding() {
           </Field>
         </WizardStep>
       );
-    default:
+    case 6:
       return (
         <WizardStep
           step={6}
           total={TOTAL}
           title={t('onb.c.mediaTitle')}
           hint={t('onb.c.mediaHint')}
-          onNext={finish}
-          nextLabel={t('onb.c.finish')}
-          secondary={{ label: t('common.skip'), onPress: finish }}>
+          onNext={browser ? next : finish}
+          nextLabel={browser ? undefined : t('onb.c.finish')}
+          secondary={{ label: t('common.skip'), onPress: browser ? next : finish }}>
           <MediaSection />
+        </WizardStep>
+      );
+    default:
+      return (
+        <WizardStep
+          step={7}
+          total={TOTAL}
+          title={t('install.title')}
+          hint={t('install.hint')}
+          onNext={finish}
+          nextLabel={t('onb.c.finish')}>
+          {browser ? <InstallGuide browser={browser} /> : null}
         </WizardStep>
       );
   }

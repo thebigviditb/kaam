@@ -3,7 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { LanguageToggle } from './LanguageToggle';
 import { useI18n } from '@/i18n';
-import { colors, spacing, text } from '@/theme';
+import { spacing, text } from '@/theme';
 
 const LETTER = {
   K: require('../../assets/brand/kaam-house-K.png'),

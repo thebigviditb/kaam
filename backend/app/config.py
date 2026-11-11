@@ -29,10 +29,17 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
     deletion_grace_days: int = 30
+    # Staging only: phone numbers whose account is wiped on every fresh login, so the app
+    # always starts at "worker or household?" and onboarding. Comma-separated E.164.
+    preview_phones: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def preview_phone_list(self) -> list[str]:
+        return [p.strip() for p in self.preview_phones.split(",") if p.strip()]
 
     @property
     def cognito_issuer(self) -> str:

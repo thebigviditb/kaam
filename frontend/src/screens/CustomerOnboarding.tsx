@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { keys, useMeta, useUpsertCustomerProfile } from '@/api/hooks';
+import { keys, useMeta, useUpdateMe, useUpsertCustomerProfile } from '@/api/hooks';
 import { DAYS, PAY_TYPES, START_TIMINGS, TIMES, type PayType, type StartTiming, type User } from '@/api/types';
 import { ChipGroup, ChipRadio } from '@/components/Chip';
 import { CityInput } from '@/components/CityInput';
@@ -12,21 +12,27 @@ import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading } from '@/components/ui';
 import { ChoiceList, WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
+import { installTarget } from '@/lib/install';
 import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
 
-const TOTAL = 6;
+/** The profile is saved at this step; there is no going back past it. */
+const SAVE_STEP = 5;
 
 /** The household's need, one question per screen. PUT /customers/me happens at step 5; step 6 is optional media. */
 export function CustomerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
   const upsert = useUpsertCustomerProfile();
+  const updateMe = useUpdateMe();
   const qc = useQueryClient();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
+  // In a browser (not the Home Screen app) one more step follows: add Kaam to the Home Screen.
+  const [browser] = useState(installTarget);
+  const TOTAL = browser ? 7 : 6;
   const [name, setName] = useState('');
   const [city, setCity] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
@@ -45,7 +51,7 @@ export function CustomerOnboarding() {
     setError(null);
     setStep((s) => s + 1);
   };
-  const back = step > 1 && step < TOTAL ? () => setStep((s) => s - 1) : undefined;
+  const back = step > 1 && step <= SAVE_STEP ? () => setStep((s) => s - 1) : undefined;
 
   const save = async () => {
     const amount = pay.trim() ? Number(pay) : null;
@@ -76,6 +82,17 @@ export function CustomerOnboarding() {
     await queueMatchesWelcome();
     requestPushOnGesture();
     router.replace('/(customer)/matches');
+  };
+
+  // The install step lives on the account so a laptop sign-up can finish it on the phone.
+  const toInstall = async () => {
+    setError(null);
+    try {
+      await updateMe.mutateAsync({ install_pending: true });
+      router.replace('/(onboarding)/install');
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   };
 
   switch (step) {
@@ -199,9 +216,11 @@ export function CustomerOnboarding() {
           total={TOTAL}
           title={t('onb.c.mediaTitle')}
           hint={t('onb.c.mediaHint')}
-          onNext={finish}
-          nextLabel={t('onb.c.finish')}
-          secondary={{ label: t('common.skip'), onPress: finish }}>
+          error={error}
+          onNext={browser ? toInstall : finish}
+          nextLabel={browser ? undefined : t('onb.c.finish')}
+          nextLoading={updateMe.isPending}
+          secondary={{ label: t('common.skip'), onPress: browser ? toInstall : finish }}>
           <MediaSection />
         </WizardStep>
       );

@@ -9,6 +9,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 import boto3
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import storage
@@ -63,8 +64,8 @@ def _delete_cognito_user(sub: str) -> None:
         pass
 
 
-def purge_user(db: Session, user: User) -> None:
-    """Hard-delete one account everywhere. Order matters for foreign keys."""
+def delete_app_data(db: Session, user: User) -> None:
+    """Hard-delete one account's Kaam data, keeping its Cognito login. Order matters (FKs)."""
     conn_ids = [
         c.id
         for c in db.query(Connection)
@@ -95,10 +96,35 @@ def purge_user(db: Session, user: User) -> None:
             storage.delete_object(m.s3_key)
         except Exception:  # noqa: BLE001 - keep purging
             log.exception("could not delete media %s", m.s3_key)
-    sub = user.cognito_sub
     db.delete(user)  # cascades profiles + media rows
     db.commit()
+
+
+def purge_user(db: Session, user: User) -> None:
+    """Hard-delete one account everywhere."""
+    sub = user.cognito_sub
+    delete_app_data(db, user)
     _delete_cognito_user(sub)
+
+
+def is_preview_phone(phone: str | None) -> bool:
+    return bool(phone) and phone in get_settings().preview_phone_list
+
+
+def start_preview_over_on_new_login(db: Session, user: User, issued_at: int) -> None:
+    """Preview accounts start over on every new sign-in: wipe the account and answer as for a
+    brand-new user (404). A sign-in while the install step is pending is the laptop-to-phone
+    handoff, so the account is kept. The first sign-in seen (the one that created the account)
+    and further requests in a known session change nothing.
+    """
+    seen = user.preview_login_iat
+    if seen is not None and issued_at <= seen:
+        return
+    if seen is not None and not user.install_pending:
+        delete_app_data(db, user)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "user not registered; call POST /me")
+    user.preview_login_iat = issued_at
+    db.commit()
 
 
 def purge_due(db: Session) -> list[str]:

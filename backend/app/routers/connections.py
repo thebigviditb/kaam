@@ -96,18 +96,18 @@ def create(
 ):
     if user.role == "worker":
         if user.worker_profile is None:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "finish onboarding first")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "finish onboarding first")
         if not body.customer_id:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "customer_id required")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "customer_id required")
         target = db.get(CustomerProfile, body.customer_id)
         if target is None or not target.is_active:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "customer not found")
         customer_id, worker_id = body.customer_id, user.id
     else:
         if user.customer_profile is None:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "finish onboarding first")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "finish onboarding first")
         if not body.worker_id:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "worker_id required")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "worker_id required")
         target = db.get(WorkerProfile, body.worker_id)
         if target is None or not target.is_visible:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "worker not found")

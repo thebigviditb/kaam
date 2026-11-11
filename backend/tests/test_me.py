@@ -65,3 +65,16 @@ def test_referral_code_and_ref(client):
     db = next(app.dependency_overrides[get_db]())
     assert db.query(User).filter(User.id == b["id"]).one().referred_by_id == a["id"]
     assert db.query(User).filter(User.id == r.json()["id"]).one().referred_by_id is None
+
+
+def test_install_pending_round_trip(client, worker):
+    assert client.get("/me", headers=WORKER).json()["install_pending"] is False
+    r = client.put("/me", json={"install_pending": True}, headers=WORKER)
+    assert r.status_code == 200 and r.json()["install_pending"] is True
+    # Other updates leave it alone.
+    client.put("/me", json={"preferred_language": "hi"}, headers=WORKER)
+    assert client.get("/me", headers=WORKER).json()["install_pending"] is True
+    assert (
+        client.put("/me", json={"install_pending": False}, headers=WORKER).json()["install_pending"]
+        is False
+    )

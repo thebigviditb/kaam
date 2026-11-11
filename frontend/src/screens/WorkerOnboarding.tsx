@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { keys, useMeta, useUpsertWorkerProfile } from '@/api/hooks';
+import { keys, useMeta, useUpdateMe, useUpsertWorkerProfile } from '@/api/hooks';
 import { DAYS, TIMES, type User } from '@/api/types';
 import { ChipGroup } from '@/components/Chip';
 import { CityInput, CityMultiInput, sameCityName } from '@/components/CityInput';
@@ -12,21 +12,27 @@ import { TagPicker } from '@/components/TagPicker';
 import { Field, Input, Loading, Row } from '@/components/ui';
 import { WizardStep } from '@/components/Wizard';
 import { useI18n } from '@/i18n';
+import { installTarget } from '@/lib/install';
 import { requestPushOnGesture } from '@/lib/push';
 import { queueMatchesWelcome } from '@/screens/MatchesScreen';
 import { MediaSection } from '@/screens/MediaSection';
 
-const TOTAL = 6;
+/** The profile is saved at this step; there is no going back past it. */
+const SAVE_STEP = 5;
 
 /** The worker's profile, one question per screen. PUT /workers/me happens at step 5; step 6 is optional media. */
 export function WorkerOnboarding() {
   const { t, label } = useI18n();
   const meta = useMeta();
   const upsert = useUpsertWorkerProfile();
+  const updateMe = useUpdateMe();
   const qc = useQueryClient();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
+  // In a browser (not the Home Screen app) one more step follows: add Kaam to the Home Screen.
+  const [browser] = useState(installTarget);
+  const TOTAL = browser ? 7 : 6;
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -58,7 +64,7 @@ export function WorkerOnboarding() {
     setError(null);
     setStep((s) => s + 1);
   };
-  const back = step > 1 && step < TOTAL ? () => setStep((s) => s - 1) : undefined;
+  const back = step > 1 && step <= SAVE_STEP ? () => setStep((s) => s - 1) : undefined;
 
   const save = async () => {
     const yrs = years.trim() ? Number(years) : 0;
@@ -91,6 +97,17 @@ export function WorkerOnboarding() {
     await queueMatchesWelcome();
     requestPushOnGesture();
     router.replace('/(worker)/matches');
+  };
+
+  // The install step lives on the account so a laptop sign-up can finish it on the phone.
+  const toInstall = async () => {
+    setError(null);
+    try {
+      await updateMe.mutateAsync({ install_pending: true });
+      router.replace('/(onboarding)/install');
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   };
 
   switch (step) {
@@ -211,9 +228,11 @@ export function WorkerOnboarding() {
           total={TOTAL}
           title={t('onb.w.mediaTitle')}
           hint={t('onb.w.mediaHint')}
-          onNext={finish}
-          nextLabel={t('onb.w.finish')}
-          secondary={{ label: t('common.skip'), onPress: finish }}>
+          error={error}
+          onNext={browser ? toInstall : finish}
+          nextLabel={browser ? undefined : t('onb.w.finish')}
+          nextLoading={updateMe.isPending}
+          secondary={{ label: t('common.skip'), onPress: browser ? toInstall : finish }}>
           <MediaSection />
         </WizardStep>
       );

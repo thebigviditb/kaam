@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -50,6 +51,12 @@ class User(Base):
     # For English readers: show Hinglish messages "original" (as written) or "english".
     # None = not asked yet; the chat asks the first time.
     hinglish_display: Mapped[str | None] = mapped_column(String(16))
+    # Onboarding ended on the "add to Home Screen" step and it is not done yet: the app shows
+    # that step again (laptop: QR code; phone: instructions) until it is skipped or installed.
+    install_pending: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Preview accounts (PREVIEW_PHONES) only: token `iat` of the newest sign-in seen, so a newer
+    # sign-in can be told apart from more requests in the same session.
+    preview_login_iat: Mapped[int | None] = mapped_column(Integer)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 

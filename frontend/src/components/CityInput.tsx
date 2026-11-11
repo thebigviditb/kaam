@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from './ui';
@@ -83,6 +83,12 @@ function useCityTyping({
   useEffect(() => clearLinger, []);
 
   const [rejected, setRejected] = useState(false);
+  // Stable identity: CityInput's sync effect depends on it, and a new function each render
+  // re-ran that effect after every keystroke and wiped what was typed.
+  const editDraft = useCallback((v: string) => {
+    setRejected(false);
+    setDraft(v);
+  }, []);
   const commit = (value: string) => {
     clearLinger();
     let v = clean(value);
@@ -103,10 +109,7 @@ function useCityTyping({
 
   return {
     draft,
-    setDraft: (v: string) => {
-      setRejected(false);
-      setDraft(v);
-    },
+    setDraft: editDraft,
     rejected,
     suggestions,
     commit,

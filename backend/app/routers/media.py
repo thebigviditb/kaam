@@ -25,12 +25,12 @@ def _out(m: Media) -> MediaOut:
 @router.post("/presign", response_model=PresignResponse)
 def presign(body: PresignRequest, user: User = Depends(get_current_user)):
     if body.content_type not in storage.ALLOWED_CONTENT_TYPES[body.kind]:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "unsupported content type")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "unsupported content type")
     limit = storage.MAX_IMAGE_BYTES if body.kind == "image" else storage.MAX_VIDEO_BYTES
     if body.size_bytes > limit:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"file too large (max {limit})")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"file too large (max {limit})")
     if len(user.media) >= MAX_ITEMS_PER_USER:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "media limit reached")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "media limit reached")
     key = storage.new_key(user.id, body.kind, body.content_type)
     return PresignResponse(
         upload_url=storage.presign_put(key, body.content_type),

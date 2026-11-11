@@ -1,4 +1,5 @@
 // Shared Twilio Verify helpers for the Cognito custom-auth Lambdas.
+import { timingSafeEqual } from "node:crypto";
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 
 const secrets = new SecretsManagerClient({});
@@ -40,4 +41,19 @@ export async function checkCode(to, code) {
     if (String(e.message).includes("404")) return false;
     throw e;
   }
+}
+
+// Staging only: the secret may hold previewPhone + previewCode, a test number that logs in with
+// a fixed code and is never texted (the API wipes its data on each login; see PREVIEW_PHONES).
+export async function isPreviewPhone(phone) {
+  const { previewPhone } = await twilio();
+  return Boolean(previewPhone) && phone === previewPhone;
+}
+
+export async function checkPreviewCode(code) {
+  const { previewCode } = await twilio();
+  if (!previewCode) return false;
+  const a = Buffer.from(String(code));
+  const b = Buffer.from(String(previewCode));
+  return a.length === b.length && timingSafeEqual(a, b);
 }
